@@ -1,42 +1,42 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
-  Delete,
+  Controller,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
 import { BotService } from './bot.service';
-import { CreateBotDto } from './dto/create-bot.dto';
-import { UpdateBotDto } from './dto/update-bot.dto';
+import { LineGuardGuard } from './line_guard/line_guard.guard';
 
 @Controller('bot')
 export class BotController {
-  constructor(private readonly botService: BotService) {}
+  constructor(private readonly botService: BotService) { }
 
   @Post()
-  create(@Body() createBotDto: CreateBotDto) {
-    return this.botService.create(createBotDto);
+  @UseGuards(LineGuardGuard)
+  async handleWebhook(@Body() body: any) {
+    const results = await Promise.all(
+      body.events.map(event => this.botService.handleEvent(event))
+    );
+    return results;
   }
 
-  @Get()
-  findAll() {
-    return this.botService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.botService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBotDto: UpdateBotDto) {
-    return this.botService.update(+id, updateBotDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.botService.remove(+id);
-  }
+  // @Post('callback')
+  // async handleWebhook(@Req() req, @Res() res) {
+  //   try {
+  //     const events = req.body.events;
+  //     const results = await Promise.all(
+  //       events.map(async (event: any) => {
+  //         // 假設收到的是文字訊息事件，則回覆相同的文字
+  //         if (event.type === 'message' && event.message.type === 'text') {
+  //           // await this.botService.replyMessage(event.replyToken, event.message.text);
+  //         }
+  //         return null;
+  //       }),
+  //     );
+  //     return res.json(results);
+  //   } catch (err) {
+  //     console.error(err);
+  //     return res.status(500).end();
+  //   }
+  // }
 }
