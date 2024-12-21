@@ -1,6 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CreateBotDto } from './dto/create-bot.dto';
-import { UpdateBotDto } from './dto/update-bot.dto';
 import * as line from '@line/bot-sdk';
 import { Message, ReplyMessageRequest } from '@line/bot-sdk/dist/messaging-api/api';
 

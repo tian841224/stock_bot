@@ -11,39 +11,35 @@ import { BotService } from './bot.service';
 import { BotGuard } from './bot.guard';
 import { WebhookEvent, WebhookRequestBody } from '@line/bot-sdk';
 
-@Controller()
+@Controller('bot')
 export class BotController {
   constructor(private readonly botService: BotService) { }
 
-  @Get('hello')
+  @Get('/hello')
   getHello(): string {
     return 'Test Hello World!';
   }
 
-  @Post()
-  // @UseGuards(BotGuard)  // 替代 line.middleware(config)
-  async handleCallback(@Req() req: any, @Res() res: any) {
+  @Post('/callback')
+  async handleCallback(@Req() req: Request, @Res() res: Response, @Body() body: any) {
     try {
-
-      const events = req.events;
-
-      if (events.length === 0) return;
-
-      const event = events[0];
-      if (event.type !== 'message' || event.message.type !== 'text') {
-        return;
+      // 確保 events 存在
+      const events = body.events;
+      if (!events || events.length === 0) {
+        return ;
       }
-      this.botService.handleEvent(event);
-
-      // const body = await this.parseRequestBody(req);
-      // const results = await Promise.all(
-      //   body.events.map(event => this.botService.handleEvent(event))
-      // );
-      // return res.json(results);
-      return;
+  
+      // 使用 Promise.all 處理所有事件
+      const results = await Promise.all(
+        events.map(event => this.botService.handleEvent(event))
+      );
+  
+      // 返回處理結果
+      return ;
+  
     } catch (error) {
       console.error(error);
-      return res.status(500).end();
+      return ;
     }
   }
 
