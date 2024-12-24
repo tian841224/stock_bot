@@ -21,7 +21,8 @@ export class BotController {
   }
 
   @Post('/callback')
-  async handleCallback(@Req() req: Request, @Res() res: Response, @Body() body: any) {
+  @UseGuards(BotGuard)
+  async handleCallback(@Body() body: any) {
     try {
       // 確保 events 存在
       const events = body.events;
@@ -43,34 +44,4 @@ export class BotController {
     }
   }
 
-  // @Post('line-bot')
-  // // @UseGuards(LineBotSignatureGuard)
-  // async getHellos(@Body() req: WebhookRequestBody): Promise<string> {
-  //   const events: WebhookEvent[] = req.events;
-
-  //   if (events.length === 0) return;
-
-  //   const event = events[0];
-  //   if (event.type !== 'message' || event.message.type !== 'text') {
-  //     return;
-  //   }
-  //   this.botService.handleEvent(event);
-  //   return;
-  // }
-
-  private async parseRequestBody(req: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let data = '';
-      req.on('data', chunk => {
-        data += chunk;
-      });
-      req.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
-  }
 }

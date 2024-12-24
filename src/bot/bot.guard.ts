@@ -3,11 +3,15 @@ import { BotService } from './bot.service';
 
 @Injectable()
 export class BotGuard implements CanActivate {
-  constructor(private readonly botService: BotService) { }
+  constructor(private readonly botService: BotService) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    this.botService.getMiddleware()(request, null, () => { });
-    return true; // Proceed if middleware passed successfully
+    
+    return new Promise((resolve) => {
+      this.botService.getMiddleware()(request, null, () => {
+        resolve(true);
+      });
+    });
   }
 }

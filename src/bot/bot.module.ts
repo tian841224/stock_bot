@@ -3,7 +3,6 @@ import { BotService } from './bot.service';
 import { BotController } from './bot.controller';
 import { ConfigService } from '@nestjs/config';
 import { messagingApi } from '@line/bot-sdk';
-import { log } from 'console';
 
 @Module({
   controllers: [BotController],
@@ -22,6 +21,6 @@ import { log } from 'console';
     },
     BotService
   ],
-  exports: ['LINE_CLIENT'],
+  exports: ['LINE_CLIENT',BotService],
 })
 export class BotModule { }

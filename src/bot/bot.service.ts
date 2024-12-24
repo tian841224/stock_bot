@@ -14,14 +14,27 @@ export class BotService {
     if (event.type !== 'message' || event.message.type !== 'text') {
       return null;
     }
-
-    // Echo back the received text message
-    const echo: Message = { type: 'text', text: event.message.text };
-
-    return this.lineClient.replyMessage({ replyToken: event.replyToken, messages: [echo] });
+    let a = this.lineClient.getBotInfo();
+    (await a).userId;
+    switch (event.message.text) {
+      case 'info':
+        return this.replyText(event.replyToken,(await a).userId);
+      case 'bye':
+        return this.replyText(event.replyToken, 'Goodbye!');
+      default:
+        return this.replyText(event.replyToken, 'Sorry, I did not understand that.');
+    }
   }
 
-  // response 會是 ReplyMessageResponse 類型
+ private replyText(replyToken: string, text: string): Promise<any> {
+    const message: ReplyMessageRequest = {
+      replyToken,
+      messages: [{ type: 'text', text }],
+    };
+
+    return this.lineClient.replyMessage(message);
+ }
+
   getMiddleware() {
     return line.middleware({
       channelSecret: process.env.CHANNEL_SECRET,
