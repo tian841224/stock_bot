@@ -6,7 +6,7 @@ async function bootstrap() {
     rawBody: true,
     bodyParser: true,
   });
-  let port = process.env.PORT ?? 3001;
+  let port = process.env.PORT ?? 3000;
   await app.listen(port);
 
   console.log(`app listening at http://localhost:${port}`);
