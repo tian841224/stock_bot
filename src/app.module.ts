@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { BrowserModule } from './browser/browser.module';
 import { LineBotModule } from './line-bot/line-bot.module';
 import { UsStockInfoModule } from './us-stock-info/us-stock-info.module';
+import { TwStockInfoModule } from './tw-stock-info/tw-stock-info.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { UsStockInfoModule } from './us-stock-info/us-stock-info.module';
     BrowserModule,
     LineBotModule,
     UsStockInfoModule,
+    TwStockInfoModule,
   ],
   controllers: [AppController],
   providers: [AppService],
