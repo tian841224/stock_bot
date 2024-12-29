@@ -9,7 +9,7 @@ export class TwStockInfoService {
     private readonly twseUrl = 'https://www.twse.com.tw/rwd/zh';
 
     // 當月市場成交資訊
-    async getDailyMarketInfoAsync(count?: number): Promise<any> {
+    async getDailyMarketInfoAsync(count?: number): Promise<TWSEApiResponse["data"]> {
 
         const url = this.twseUrl + '/afterTrading/FMTQIK'
 
@@ -26,7 +26,7 @@ export class TwStockInfoService {
             response.data.data = response.data.data.slice(0, count);
         }
 
-        return response.data;
+        return response.data.data;
     }
 
     // 盤後資訊
@@ -58,7 +58,7 @@ export class TwStockInfoService {
     }
 
     // 成交量前20股票
-    async getTopVolumeItemsAsync(): Promise<any> {
+    async getTopVolumeItemsAsync(): Promise<TWSEApiResponse["data"]> {
 
         // 轉換日期格式
         const url = this.twseUrl + `/afterTrading/MI_INDEX20`
@@ -71,11 +71,11 @@ export class TwStockInfoService {
 
         const response = await axios.get<TWSEApiResponse>(url);
 
-        return response.data;
+        return response.data.data;
     }
 
     // 股票新聞
-    async getStockNewsAsync(symbol?: string): Promise<any> {
+    async getStockNewsAsync(symbol?: string): Promise<YahooNewsRssResponse[]> {
 
         let url = `https://tw.stock.yahoo.com/rss?category=tw-market`;
 
@@ -92,7 +92,7 @@ export class TwStockInfoService {
 
 
       // 取前 5 筆資料並轉換格式
-      return response.items.slice(0, 5).map(x => {
+      return response.items.slice(0, 5).map<YahooNewsRssResponse>(x => {
         return {
           title: x.title,
           link: x.link,
