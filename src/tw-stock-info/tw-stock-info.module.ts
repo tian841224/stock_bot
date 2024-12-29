@@ -5,5 +5,6 @@ import { TwStockInfoController } from './tw-stock-info.controller';
 @Module({
   controllers: [TwStockInfoController],
   providers: [TwStockInfoService],
+  exports: [TwStockInfoService],
 })
 export class TwStockInfoModule {}
