@@ -9,7 +9,7 @@ export class TwStockInfoService {
     private readonly twseUrl = 'https://www.twse.com.tw/rwd/zh';
 
     // 當月市場成交資訊
-    async getDailyMarketInfoAsync(count?: number): Promise<TWSEApiResponse["data"]> {
+    async getDailyMarketInfoAsync(count: number = 1): Promise<TWSEApiResponse["data"]> {
 
         const url = this.twseUrl + '/afterTrading/FMTQIK'
 
@@ -23,7 +23,7 @@ export class TwStockInfoService {
 
         if (response.data.data && Array.isArray(response.data.data)) {
             if (count == null) count = 1;
-            response.data.data = response.data.data.slice(0, count);
+            response.data.data = response.data.data.slice(-count);
         }
 
         return response.data.data;
@@ -33,8 +33,8 @@ export class TwStockInfoService {
     async getAfterTradingVolumeAsync(symbol: string): Promise<any> {
 
         // 轉換日期格式
-        const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const url = this.twseUrl + `/afterTrading/MI_INDEX?date=${20241224}&type=ALLBUT0999`
+        const date = this.getTradeDate();
+        const url = this.twseUrl + `/afterTrading/MI_INDEX?date=${date}&type=ALLBUT0999`
 
         //印出請求網址
         axios.interceptors.request.use(request => {
@@ -91,14 +91,33 @@ export class TwStockInfoService {
         const response = await parser.parseURL(url);
 
 
-      // 取前 5 筆資料並轉換格式
-      return response.items.slice(0, 5).map<YahooNewsRssResponse>(x => {
-        return {
-          title: x.title,
-          link: x.link,
-        //   pubDate: x.pubDate,
-        //   description: x.description,
-        };
-      });
+        // 取前 5 筆資料並轉換格式
+        return response.items.slice(0, 5).map<YahooNewsRssResponse>(x => {
+            return {
+                title: x.title,
+                link: x.link,
+                //   pubDate: x.pubDate,
+                //   description: x.description,
+            };
+        });
     }
+
+    // 處理交易日
+    getTradeDate() {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 是週日, 6 是週六
+
+        // 如果是週六，往前調一天
+        if (dayOfWeek === 6) {
+            today.setDate(today.getDate() - 1);
+        }
+        // 如果是週日，往前調兩天
+        else if (dayOfWeek === 0) {
+            today.setDate(today.getDate() - 2);
+        }
+
+        return today.toISOString().slice(0, 10).replace(/-/g, '');
+    }
+
+
 } 
