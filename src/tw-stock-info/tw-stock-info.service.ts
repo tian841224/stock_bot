@@ -27,6 +27,7 @@ export class TwStockInfoService {
         }
 
         return response.data.data;
+        return response.data.data;
     }
 
     // 盤後資訊
@@ -59,6 +60,7 @@ export class TwStockInfoService {
 
     // 成交量前20股票
     async getTopVolumeItemsAsync(): Promise<TWSEApiResponse["data"]> {
+    async getTopVolumeItemsAsync(): Promise<TWSEApiResponse["data"]> {
 
         // 轉換日期格式
         const url = this.twseUrl + `/afterTrading/MI_INDEX20`
@@ -72,9 +74,11 @@ export class TwStockInfoService {
         const response = await axios.get<TWSEApiResponse>(url);
 
         return response.data.data;
+        return response.data.data;
     }
 
     // 股票新聞
+    async getStockNewsAsync(symbol?: string): Promise<YahooNewsRssResponse[]> {
     async getStockNewsAsync(symbol?: string): Promise<YahooNewsRssResponse[]> {
 
         let url = `https://tw.stock.yahoo.com/rss?category=tw-market`;
