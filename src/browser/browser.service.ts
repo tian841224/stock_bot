@@ -3,8 +3,8 @@ import puppeteer, { Browser, Page } from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
-  private browser: Browser;
-  private page: Page;
+  browser: Browser;
+  page: Page;
 
   async initBrowser() {
     this.createBrowser();
@@ -12,7 +12,6 @@ export class BrowserService {
   }
 
   async closeBrowser() {
-    await this.page?.close();
     await this.browser?.close();
   }
 
@@ -27,7 +26,7 @@ export class BrowserService {
       console.log('Browser建立成功');
     } catch (error: any) {
       await this.browser?.close();
-      throw new Error(`[initBrowser] : ${error.message}`);
+      throw new Error(`[createBrowser] : ${error.message}`);
     }
   }
 
@@ -35,14 +34,13 @@ export class BrowserService {
     try {
       if (this.browser == null) await this.createBrowser();
 
-      const page = await this.browser.newPage();
-      await page.setViewport({ width: 1920, height: 1080 });
+      this.page = await this.browser.newPage();
+      await this.page.setViewport({ width: 1920, height: 1080 });
 
       if (this.page == null) throw new Error('Page建立失敗');
       console.log('Page建立成功');
     } catch (error: any) {
-      await this.page.close;
-      throw new Error(`[initPage] : ${error.message}`);
+      throw new Error(`[createPage] : ${error.message}`);
     }
   }
 }
