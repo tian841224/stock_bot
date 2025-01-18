@@ -3,6 +3,9 @@ import * as line from '@line/bot-sdk';
 import { FlexBubble, FlexMessage, Message, PushMessageRequest, ReplyMessageRequest } from '@line/bot-sdk/dist/messaging-api/api';
 import { WebhookEvent } from '@line/bot-sdk';
 import { TwStockInfoService } from 'src/tw-stock-info/tw-stock-info.service';
+import { TopVolumeItemsResponseDto } from 'src/tw-stock-info/interface/top-volume-item-response-dto';
+import { AfterTradingVolumeResponseDto } from 'src/tw-stock-info/interface/after-trading-volume-response-dto';
+import { DailyMarketInfoResponseDto } from 'src/tw-stock-info/interface/daily-market-Info-response-dto';
 
 @Injectable()
 export class LineBotService {
@@ -20,6 +23,7 @@ export class LineBotService {
     /* 
     * TODO: 
     * 1. 回傳訊息排版
+    * 2. 傳送圖片相關功能尚未完成
     */
 
     // 解析使用者傳入的股票代號
@@ -30,18 +34,21 @@ export class LineBotService {
         return this.replyText(event.replyToken, {
           text: 'Goodbye!',
           type: 'text'
-        } );
+        });
       case 'd':
-        if(!number) return;
+        if (!number) return;
         return this.getDailyMarketInfoAsync(event.replyToken, Number(number));
       case 'a':
-        if(!number) return;
+        if (!number) return;
         return this.getAfterTradingVolumeAsync(event.replyToken, number);
       case 't':
         return this.getTopVolumeItemsAsync(event.replyToken);
       case 'n':
-        if(!number) return;
-        return this.getStockNewsAsync(event.replyToken,number);
+        if (!number) return;
+        return this.getStockNewsAsync(event.replyToken, number);
+      case 'k':
+        if (!number) return;
+        return this.getKlineAsync(event.replyToken, number);
       default:
         return this.replyText(event.replyToken, {
           text: 'Sorry, I did not understand that.',
@@ -68,14 +75,32 @@ export class LineBotService {
   private async getTopVolumeItemsAsync(userId: string) {
     var info = await this.twStockInfoService.getTopVolumeItemsAsync();
     var result = await this.formatTopTenToFlexMessage(info);
-    this.replyText(userId, result);
+    await this.replyText(userId, result);
   }
 
   // 傳送股票新聞
   private async getStockNewsAsync(userId: string, symbol: string) {
     var info = await this.twStockInfoService.getStockNewsAsync(symbol);
     var result = await this.formatNewsToFlexMessage(info);
-    this.replyText(userId, result);
+    await this.replyText(userId, result);
+  }
+
+  // 傳送K線圖
+  async getKlineAsync(userId: string, symbol: string) {
+    var info = await this.twStockInfoService.getKlineAsync(symbol);
+
+    // 將 base64 轉換為 data URL
+    const imageUrl = `data:image/png;base64,${info}`;
+
+    const message: ReplyMessageRequest = {
+      replyToken: userId,
+      messages: [{
+        type: 'image',
+        originalContentUrl: imageUrl,
+        previewImageUrl: imageUrl
+      }]
+    };
+    await this.lineClient.replyMessage(message);
   }
 
   // 推送訊息
@@ -98,9 +123,9 @@ export class LineBotService {
     return this.lineClient.replyMessage(message);
   }
 
-  private formatDailyMarketInfoToFlexMessage(data: object[][]): FlexMessage {
+  private formatDailyMarketInfoToFlexMessage(data: DailyMarketInfoResponseDto[]): FlexMessage {
     const bubbles: FlexBubble[] = data.map(item => {
-      const changeValue = parseFloat(item[5].toString());
+      const changeValue = parseFloat(item.change);
       const changeColor = changeValue >= 0 ? '#E63946' : '#2A9D8F'; // 漲用紅色，跌用綠色
 
       return {
@@ -111,7 +136,7 @@ export class LineBotService {
           contents: [
             {
               type: 'text',
-              text: '台股日交易資訊',
+              text: '當日交易資訊',
               weight: 'bold',
               size: 'xl',
               color: '#333333',
@@ -119,7 +144,7 @@ export class LineBotService {
             },
             {
               type: 'text',
-              text: item[0].toString(),
+              text: item.date,
               size: 'sm',
               color: '#666666',
               margin: 'sm'
@@ -147,7 +172,7 @@ export class LineBotService {
                     },
                     {
                       type: 'text',
-                      text: item[4].toString(),
+                      text: item.index,
                       size: 'md',
                       color: '#000000',
                       align: 'end',
@@ -168,7 +193,7 @@ export class LineBotService {
                     },
                     {
                       type: 'text',
-                      text: item[5].toString(),
+                      text: item.change,
                       size: 'md',
                       color: changeColor,
                       align: 'end',
@@ -199,7 +224,7 @@ export class LineBotService {
                         },
                         {
                           type: 'text',
-                          text: item[1].toString(),
+                          text: item.volume,
                           size: 'sm',
                           color: '#333333',
                           align: 'end',
@@ -221,7 +246,7 @@ export class LineBotService {
                         },
                         {
                           type: 'text',
-                          text: item[2].toString(),
+                          text: item.amount,
                           size: 'sm',
                           color: '#333333',
                           align: 'end',
@@ -243,7 +268,7 @@ export class LineBotService {
                         },
                         {
                           type: 'text',
-                          text: item[3].toString(),
+                          text: item.transaction,
                           size: 'sm',
                           color: '#333333',
                           align: 'end',
@@ -272,24 +297,21 @@ export class LineBotService {
     };
   }
 
-  private formatStockInfoToFlexMessage(stockInfo: any[]): FlexMessage {
+  private formatStockInfoToFlexMessage(stockInfo: AfterTradingVolumeResponseDto): FlexMessage {
     // 修正漲跌符號處理
-    const upDownSign = stockInfo[9]?.toString()?.trim().replace(/<[^>]*>/g, '') || '';
+    const upDownSign = stockInfo.upDownSign?.trim().replace(/<[^>]*>/g, '') || '';
     const getUpDownSign = (sign: string) => {
       if (sign.includes('+')) return '+';
       if (sign.includes('-')) return '-';
       return '';
     };
     const actualUpDownSign = getUpDownSign(upDownSign);
-
-    const changeAmount = parseFloat(stockInfo[10]?.toString() || '0') || 0;
-    const openPrice = parseFloat(stockInfo[5]?.toString() || '0') || 0;
     const changeColor = upDownSign === "+" ? "#E63946" : upDownSign === "-" ? "#2A9D8F" : "#333333";
-    const percentageChange = openPrice !== 0 ? `${(changeAmount / openPrice * 100).toFixed(2)}%` : "0.00%";
+    const percentageChange = stockInfo.openPrice !== 0 ? `${(stockInfo.changeAmount / stockInfo.openPrice * 100).toFixed(2)}%` : "0.00%";
 
     return {
       type: "flex",
-      altText: `${stockInfo[1]} (${stockInfo[0]}) 股票資訊`,
+      altText: `${stockInfo.stockName} (${stockInfo.stockId}) 股票資訊`,
       contents: {
         type: "bubble",
         body: {
@@ -302,7 +324,7 @@ export class LineBotService {
               contents: [
                 {
                   type: "text",
-                  text: `${stockInfo[1]} (${stockInfo[0]})`,
+                  text: `${stockInfo.stockName} (${stockInfo.stockId})`,
                   weight: "bold",
                   size: "xl",
                   color: "#333333",
@@ -340,7 +362,7 @@ export class LineBotService {
                     },
                     {
                       type: "text",
-                      text: stockInfo[8],
+                      text: stockInfo.highPrice?.toString() || "",
                       size: "xl",
                       color: changeColor,
                       align: "end",
@@ -362,7 +384,7 @@ export class LineBotService {
                     },
                     {
                       type: "text",
-                      text: `${actualUpDownSign}${changeAmount} (${percentageChange})`,
+                      text: `${actualUpDownSign}${stockInfo.changeAmount} (${percentageChange})`,
                       size: "sm",
                       color: changeColor,
                       align: "end",
@@ -377,12 +399,12 @@ export class LineBotService {
               layout: "vertical",
               margin: "lg",
               contents: [
-                ["成交股數", stockInfo[2]],
-                ["成交金額", stockInfo[4]],
-                ["成交筆數", stockInfo[3]],
-                ["開盤價", stockInfo[5]],
-                ["最高價", stockInfo[6]],
-                ["最低價", stockInfo[7]]
+                ["成交股數", stockInfo.volume],
+                ["成交金額", stockInfo.amount],
+                ["成交筆數", stockInfo.transaction],
+                ["開盤價", stockInfo.openPrice.toString()],
+                ["最高價", stockInfo.highPrice.toString()],
+                ["最低價", stockInfo.lowPrice.toString()],
               ].map(([label, value]) => ({
                 type: "box",
                 layout: "horizontal",
@@ -412,7 +434,7 @@ export class LineBotService {
     };
   }
 
-  private formatTopTenToFlexMessage(stockData: any[][]): FlexMessage {
+  private formatTopTenToFlexMessage(stockData: TopVolumeItemsResponseDto[]): FlexMessage {
     const topTen = stockData.slice(0, 10);
 
     return {
@@ -438,13 +460,11 @@ export class LineBotService {
           layout: 'vertical',
           spacing: 'md',
           contents: topTen.map((item, index) => {
-            const upDownSign = item[9]?.toString()?.trim().replace(/<[^>]*>/g, '') || '';
-            const changeAmount = parseFloat(item[10]?.toString() || '0') || 0;
-            const openPrice = parseFloat(item[5]?.toString() || '0') || 0;
+            const upDownSign = item.upDownSign?.toString()?.trim().replace(/<[^>]*>/g, '') || '';
             const changeColor = upDownSign.includes('+') ? '#E63946' :
               upDownSign.includes('-') ? '#2A9D8F' : '#333333';
-            const percentageChange = openPrice !== 0 ?
-              `${(changeAmount / openPrice * 100).toFixed(2)}%` : "0.00%";
+            const percentageChange = item.openPrice !== 0 ?
+              `${(item.changeAmount / item.openPrice * 100).toFixed(2)}%` : "0.00%";
 
             return {
               type: 'box',
@@ -459,7 +479,7 @@ export class LineBotService {
                   contents: [
                     {
                       type: 'text',
-                      text: `${index + 1}. ${item[2].replace(/\s+/g, '')}(${item[1].replace(/\s+/g, '')}) ${upDownSign.includes('+') ? "📈" : upDownSign.includes('-') ? "📉" : "➖"}`, // 組合文字，移除空格
+                      text: `${index + 1}. ${item.stockName.replace(/\s+/g, '')}(${item.stockId.replace(/\s+/g, '')}) ${upDownSign.includes('+') ? "📈" : upDownSign.includes('-') ? "📉" : "➖"}`, // 組合文字，移除空格
                       size: 'sm',
                       color: changeColor,
                       weight: 'bold',
@@ -481,7 +501,7 @@ export class LineBotService {
                       layout: 'horizontal',
                       contents: [
                         { type: 'text', text: '成交股數', size: 'xs', color: '#666666', flex: 3 },
-                        { type: 'text', text: item[3]?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
+                        { type: 'text', text: item.volume?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
                       ]
                     },
                     {
@@ -489,7 +509,7 @@ export class LineBotService {
                       layout: 'horizontal',
                       contents: [
                         { type: 'text', text: '成交筆數', size: 'xs', color: '#666666', flex: 3 },
-                        { type: 'text', text: item[4]?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
+                        { type: 'text', text: item.transaction?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
                       ]
                     },
                     {
@@ -497,7 +517,7 @@ export class LineBotService {
                       layout: 'horizontal',
                       contents: [
                         { type: 'text', text: '開盤價', size: 'xs', color: '#666666', flex: 3 },
-                        { type: 'text', text: item[5]?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
+                        { type: 'text', text: item.openPrice?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
                       ]
                     },
                     {
@@ -505,7 +525,7 @@ export class LineBotService {
                       layout: 'horizontal',
                       contents: [
                         { type: 'text', text: '收盤價', size: 'xs', color: '#666666', flex: 3 },
-                        { type: 'text', text: item[8]?.toString() || '0', size: 'xs', color: changeColor, align: 'end', flex: 7, weight: 'bold' }
+                        { type: 'text', text: item.closePrice?.toString() || '0', size: 'xs', color: changeColor, align: 'end', flex: 7, weight: 'bold' }
                       ]
                     },
                     {
@@ -513,7 +533,7 @@ export class LineBotService {
                       layout: 'horizontal',
                       contents: [
                         { type: 'text', text: '漲跌幅', size: 'xs', color: '#666666', flex: 3 },
-                        { type: 'text', text: `${upDownSign}${changeAmount} (${percentageChange})`, size: 'xs', color: changeColor, align: 'end', flex: 7 }
+                        { type: 'text', text: `${upDownSign}${item.changeAmount} (${percentageChange})`, size: 'xs', color: changeColor, align: 'end', flex: 7 }
                       ]
                     },
                     {
@@ -521,7 +541,7 @@ export class LineBotService {
                       layout: 'horizontal',
                       contents: [
                         { type: 'text', text: '最高價', size: 'xs', color: '#666666', flex: 3 },
-                        { type: 'text', text: item[6]?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
+                        { type: 'text', text: item.highPrice?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
                       ]
                     },
                     {
@@ -529,7 +549,7 @@ export class LineBotService {
                       layout: 'horizontal',
                       contents: [
                         { type: 'text', text: '最低價', size: 'xs', color: '#666666', flex: 3 },
-                        { type: 'text', text: item[7]?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
+                        { type: 'text', text: item.lowPrice?.toString() || '0', size: 'xs', color: '#333333', align: 'end', flex: 7 }
                       ]
                     }
                   ]
