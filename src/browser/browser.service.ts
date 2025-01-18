@@ -3,18 +3,21 @@ import puppeteer, { Browser, Page } from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
-  constructor() { 
-    // this.createBrowser();
-    this.createPage();
-  }
+  private browser: Browser;
+  private page: Page;
 
-  browser: Browser;
-  page: Page;
-
-  // async initBrowser() {
+  // constructor() { 
   //   this.createBrowser();
   //   this.createPage();
   // }
+
+  async GetPage():Promise<Page> {
+    if(this.browser == null || this.page == null){
+      await this.createPage();
+    }
+    
+    return this.page;
+  }
 
   async disposeBrowser() {
     await this.page?.close();
@@ -51,6 +54,7 @@ export class BrowserService {
       }
 
     } catch (error: any) {
+      await this.page?.close();
       throw new Error(`[createPage] : ${error.message}`);
     }
   }

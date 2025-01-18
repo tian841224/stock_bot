@@ -175,7 +175,7 @@ export class TwStockInfoService {
     // 取得K線圖表
     async getKlineAsync(symbol: string, input: string = '日K'): Promise<KlineResponseDto> {
         try {
-            const page = this.browserService.page;
+            const page = await this.browserService.GetPage();
             // 載入網頁
             const url = this.cnyesUrl + symbol;
             Logger.log(url, '載入網頁');
@@ -234,8 +234,7 @@ export class TwStockInfoService {
     // 取得詳細圖表
     async getDetailPriceAsync(symbol: string): Promise<DetailPriceResponseDto> {
         try {
-            // this.browserService.initBrowser();
-            const page = this.browserService.page;
+            const page = await this.browserService.GetPage();
 
             // 載入網頁
             await page.goto(this.cnyesUrl + symbol);
@@ -321,8 +320,7 @@ export class TwStockInfoService {
     // 取得股票機校
     async getPerformanceAsync(symbol: string): Promise<PerformanceResponseDto> {
         try {
-            // this.browserService.initBrowser();
-            const page = this.browserService.page;
+            const page = await this.browserService.GetPage();
 
             // 載入網頁
             await page.goto(this.cnyesUrl + symbol);
@@ -377,8 +375,7 @@ export class TwStockInfoService {
 
     async getNewsAsync(symbol: string): Promise<NewsResponseDto> {
         try {
-            // this.browserService.initBrowser();
-            const page = this.browserService.page;
+            const page = await this.browserService.GetPage();
 
             // 載入網頁
             await page.goto(this.cnyesUrl + symbol);
