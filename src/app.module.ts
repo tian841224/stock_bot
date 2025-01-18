@@ -6,6 +6,7 @@ import { BrowserModule } from './browser/browser.module';
 import { LineBotModule } from './line-bot/line-bot.module';
 import { UsStockInfoModule } from './us-stock-info/us-stock-info.module';
 import { TwStockInfoModule } from './tw-stock-info/tw-stock-info.module';
+import { TgBotModule } from './tg-bot/tg-bot.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { TwStockInfoModule } from './tw-stock-info/tw-stock-info.module';
     }),
     BrowserModule,
     LineBotModule,
+    TgBotModule,
     UsStockInfoModule,
     TwStockInfoModule,
   ],
