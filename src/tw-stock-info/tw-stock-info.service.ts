@@ -1,22 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { log } from 'console';
 import * as Parser from 'rss-parser';  // 正確的方式
 import { BrowserService } from 'src/browser/browser.service';
+import { TopVolumeItemsResponseDto } from './interface/top-volume-item-response-dto';
+import { AfterTradingVolumeResponseDto } from './interface/after-trading-volume-response-dto';
+import { DailyMarketInfoResponseDto } from './interface/daily-market-Info-response-dto';
 
 
 @Injectable()
 export class TwStockInfoService {
+    // 台灣證券交易所網址
     private readonly twseUrl = 'https://www.twse.com.tw/rwd/zh';
-    private readonly yahooUrl = 'https://tw.stock.yahoo.com';
+    // private readonly yahooUrl = 'https://tw.stock.yahoo.com';
+    // 鉅亨網網址
     private readonly cnyesUrl = 'https://www.cnyes.com/twstock/';
     constructor(
         private readonly browserService: BrowserService,
     ) { }
-    // 台灣證券交易所網址
+    
 
     // 當月市場成交資訊
-    async getDailyMarketInfoAsync(count: number = 1): Promise<TWSEApiResponse["data"]> {
+    async getDailyMarketInfoAsync(count: number = 1): Promise<DailyMarketInfoResponseDto[]> {
 
         const url = this.twseUrl + '/afterTrading/FMTQIK'
 
@@ -33,11 +37,18 @@ export class TwStockInfoService {
             response.data.data = response.data.data.slice(-count);
         }
 
-        return response.data.data;
+        return response.data.data.map(row => ({
+            date: row[0]?.toString() || '',
+            volume: row[1]?.toString() || '',
+            amount: row[2]?.toString() || '',
+            transaction: row[3]?.toString() || '',
+            index: row[4]?.toString() || '',
+            change: row[5]?.toString() || ''
+        }));
     }
 
     // 盤後資訊
-    async getAfterTradingVolumeAsync(symbol: string): Promise<Object[]> {
+    async getAfterTradingVolumeAsync(symbol: string): Promise<AfterTradingVolumeResponseDto> {
 
         // 轉換日期格式
         const date = this.getTradeDate();
@@ -61,11 +72,31 @@ export class TwStockInfoService {
             return;
         }
 
-        return stockInfo;
+        const openPrice = this.parseNumber(stockInfo[5]?.toString());
+        const changeAmount = this.parseNumber(stockInfo[10]?.toString()) || 0;
+
+        const percentageChange = openPrice !== 0 ?
+            `${((changeAmount / openPrice) * 100).toFixed(2)}%` :
+            '0.00%';
+
+        return {
+            stockId: stockInfo[0]?.toString() || '',
+            stockName: stockInfo[1]?.toString() || '',
+            volume: stockInfo[2]?.toString() || '',
+            transaction: stockInfo[3]?.toString() || '',
+            amount: stockInfo[4]?.toString() || '',
+            openPrice: openPrice,
+            closePrice: this.parseNumber(stockInfo[8]?.toString()) || 0,
+            highPrice: this.parseNumber(stockInfo[6]?.toString()) || 0,
+            lowPrice: this.parseNumber(stockInfo[7]?.toString()) || 0,
+            upDownSign: this.extractUpDownSign(stockInfo[9]?.toString() || ''),
+            changeAmount: changeAmount,
+            percentageChange: percentageChange
+        };
     }
 
     // 成交量前20股票
-    async getTopVolumeItemsAsync(): Promise<TWSEApiResponse["data"]> {
+    async getTopVolumeItemsAsync(): Promise<TopVolumeItemsResponseDto[]> {
 
         // 轉換日期格式
         const url = this.twseUrl + `/afterTrading/MI_INDEX20`
@@ -78,7 +109,39 @@ export class TwStockInfoService {
 
         const response = await axios.get<TWSEApiResponse>(url);
 
-        return response.data.data;
+        if (!response.data?.data || response.data.data.length === 0) {
+            Logger.error('No data received from TWSE API');
+            return [];
+        }
+
+        // 將資料轉換為 TopVolumeItemsResponseDto 格式
+        return response.data.data.map((item, index) => {
+            // 處理數值轉換
+            const openPrice = this.parseNumber(item[5]?.toString()) || 0;
+            const changeAmount = this.parseNumber(item[10]?.toString()) || 0;
+
+            // 計算漲跌幅
+            const percentageChange = openPrice !== 0 ?
+                `${((changeAmount / openPrice) * 100).toFixed(2)}%` :
+                '0.00%';
+
+            return {
+                rank: (index + 1).toString(),        // 排名
+                stockId: item[1]?.toString() || '',  // 證券代號
+                stockName: item[2]?.toString() || '', // 證券名稱
+                volume: item[3]?.toString() || '',    // 成交股數
+                transaction: item[4]?.toString() || '', // 成交筆數
+                openPrice: openPrice,  // 開盤價
+                highPrice: this.parseNumber(item[6]?.toString()) || 0,  // 最高價
+                lowPrice: this.parseNumber(item[7]?.toString()) || 0,   // 最低價
+                closePrice: this.parseNumber(item[8]?.toString()) || 0, // 收盤價
+                upDownSign: this.extractUpDownSign(item[9]?.toString() || ''), // 漲跌(+/-)
+                changeAmount: changeAmount, // 漲跌價差
+                percentageChange: percentageChange, // 漲跌幅
+                buyPrice: this.parseNumber(item[11]?.toString()) || 0,    // 最後揭示買價
+                sellPrice: this.parseNumber(item[12]?.toString()) || 0    // 最後揭示賣價
+            };
+        });
     }
 
     // 股票新聞
@@ -112,18 +175,22 @@ export class TwStockInfoService {
     // 取得K線圖表
     async getKlineAsync(symbol: string, input: string = '日K'): Promise<KlineResponseDto> {
         try {
-            this.browserService.initBrowser();
             const page = this.browserService.page;
             // 載入網頁
-            await page.goto(this.cnyesUrl + symbol);
+            const url = this.cnyesUrl + symbol;
+            Logger.log(url, '載入網頁');
+            await page.goto(url);
             // 等待圖表載入
+            Logger.log('等待圖表載入');
             await page.waitForSelector('div.simple-chart table');
             // 取得股票名稱
+            Logger.log('取得股票名稱');
             const element = await page.waitForSelector('div.quote-header h2');
             const textContent = await element.evaluate(el => el.innerText);
             const stockName = textContent.split('\n')[0] || '未知股票';
 
             // 等待並點擊按鈕
+            Logger.log('等待並點擊按鈕');
             await page.waitForSelector('div.chart_range_selector button');
             const buttons = await page.$$('div.chart_range_selector button');
 
@@ -136,32 +203,38 @@ export class TwStockInfoService {
             }
 
             // 等待網路請求完成
+            Logger.log('等待網路請求完成');
             await page.waitForNetworkIdle();
 
             // 等待圖表元素
+            Logger.log('等待圖表元素');
             const chartElement = await page.waitForSelector('div.tradingview-chart');
             if (!chartElement) {
                 throw new Error('找不到圖表元素');
             }
 
+            const image = await chartElement.screenshot();
+            Logger.log('已擷取網站圖表');
+
             let result: KlineResponseDto = ({
                 stockName: stockName,
                 symbol: symbol,
-                image: await chartElement.screenshot(),
+                image: image,
             });
 
             return result;
         }
         catch (error) {
             Logger.error(error, 'getKlineAsync');
-            return null;
+            this.browserService.disposeBrowser();
+            throw error;
         }
     }
 
     // 取得詳細圖表
     async getDetailPriceAsync(symbol: string): Promise<DetailPriceResponseDto> {
         try {
-            this.browserService.initBrowser();
+            // this.browserService.initBrowser();
             const page = this.browserService.page;
 
             // 載入網頁
@@ -240,6 +313,7 @@ export class TwStockInfoService {
         }
         catch (error) {
             Logger.error(error, 'getDetailPriceAsync');
+            this.browserService.disposeBrowser();
             return null;
         }
     }
@@ -247,7 +321,7 @@ export class TwStockInfoService {
     // 取得股票機校
     async getPerformanceAsync(symbol: string): Promise<PerformanceResponseDto> {
         try {
-            this.browserService.initBrowser();
+            // this.browserService.initBrowser();
             const page = this.browserService.page;
 
             // 載入網頁
@@ -296,13 +370,14 @@ export class TwStockInfoService {
             return result;
         } catch (error) {
             Logger.error(error, 'getDetailPriceAsync');
+            this.browserService.disposeBrowser();
             return null;
         }
     }
 
     async getNewsAsync(symbol: string): Promise<NewsResponseDto> {
         try {
-            this.browserService.initBrowser();
+            // this.browserService.initBrowser();
             const page = this.browserService.page;
 
             // 載入網頁
@@ -341,7 +416,7 @@ export class TwStockInfoService {
 
         } catch (error) {
             Logger.error(error, 'getNewsAsync');
-            return null;
+            this.browserService.disposeBrowser();
         }
     }
 
@@ -362,5 +437,27 @@ export class TwStockInfoService {
         return today.toISOString().slice(0, 10).replace(/-/g, '');
     }
 
+    // 格式化漲跌幅號
+    private extractUpDownSign(html: string): string {
+        if (!html) return '';
+        // 使用正則表達式匹配 + 或 - 符號
+        const match = html.match(/[+-]/);
+        return match ? match[0] : '';
+    }
 
+    private parseNumber(value: string | undefined): number {
+        if (!value) return 0;
+
+        // 移除逗號，保留小數點
+        const cleanValue = value.replace(/,/g, '');
+
+        // 使用 Number.parseFloat 確保小數點精確度
+        const parsedValue = Number.parseFloat(cleanValue);
+
+        // 若非有效數字則返回 0
+        if (isNaN(parsedValue)) return 0;
+
+        // 使用 toFixed 保留兩位小數並轉回 number
+        return parseFloat(parsedValue.toFixed(2));
+    }
 } 
