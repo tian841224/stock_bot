@@ -6,6 +6,7 @@ import { TwStockInfoService } from 'src/tw-stock-info/tw-stock-info.service';
 import { TopVolumeItemsResponseDto } from 'src/tw-stock-info/interface/top-volume-item-response-dto';
 import { AfterTradingVolumeResponseDto } from 'src/tw-stock-info/interface/after-trading-volume-response-dto';
 import { DailyMarketInfoResponseDto } from 'src/tw-stock-info/interface/daily-market-Info-response-dto';
+import { ImgurService } from 'src/imgur/imgur.service';
 
 @Injectable()
 export class LineBotService {
@@ -13,7 +14,8 @@ export class LineBotService {
   constructor(
     @Inject('LINE_CLIENT')
     private readonly lineClient: line.messagingApi.MessagingApiClient,
-    private readonly twStockInfoService: TwStockInfoService
+    private readonly twStockInfoService: TwStockInfoService,
+    private readonly imgurService: ImgurService
   ) { }
 
   async handleEvent(event: WebhookEvent): Promise<any> {
@@ -35,7 +37,7 @@ export class LineBotService {
           text: 'Goodbye!',
           type: 'text'
         });
-      case 'd':
+      case 'm':
         if (!number) return;
         return this.getDailyMarketInfoAsync(event.replyToken, Number(number));
       case 'a':
@@ -49,6 +51,12 @@ export class LineBotService {
       case 'k':
         if (!number) return;
         return this.getKlineAsync(event.replyToken, number);
+      case 'p':
+        if (!number) return;
+        return this.getPerformanceAsync(event.replyToken, number);
+      case 'd':
+        if (!number) return;
+        return this.getDetailPriceAsync(event.replyToken, number);
       default:
         return this.replyText(event.replyToken, {
           text: 'Sorry, I did not understand that.',
@@ -89,15 +97,52 @@ export class LineBotService {
   async getKlineAsync(userId: string, symbol: string) {
     var info = await this.twStockInfoService.getKlineAsync(symbol);
 
-    // 將 base64 轉換為 data URL
-    const imageUrl = `data:image/png;base64,${info}`;
+    // Convert Uint8Array to Buffer
+    const buffer = Buffer.from(info.image);
+    const uploadImage = await this.imgurService.uploadImage(buffer);
 
     const message: ReplyMessageRequest = {
       replyToken: userId,
       messages: [{
         type: 'image',
-        originalContentUrl: imageUrl,
-        previewImageUrl: imageUrl
+        originalContentUrl: uploadImage.link,
+        previewImageUrl: uploadImage.link
+      }]
+    };
+    await this.lineClient.replyMessage(message);
+  }
+
+  async getPerformanceAsync(userId: string, symbol: string) {
+    var info = await this.twStockInfoService.getPerformanceAsync(symbol);
+
+    // Convert Uint8Array to Buffer
+    const buffer = Buffer.from(info.image);
+    const uploadImage = await this.imgurService.uploadImage(buffer);
+
+    const message: ReplyMessageRequest = {
+      replyToken: userId,
+      messages: [{
+        type: 'image',
+        originalContentUrl: uploadImage.link,
+        previewImageUrl: uploadImage.link
+      }]
+    };
+    await this.lineClient.replyMessage(message);
+  }
+
+  async getDetailPriceAsync(userId: string, symbol: string) {
+    var info = await this.twStockInfoService.getDetailPriceAsync(symbol);
+
+    // Convert Uint8Array to Buffer
+    const buffer = Buffer.from(info.image);
+    const uploadImage = await this.imgurService.uploadImage(buffer);
+
+    const message: ReplyMessageRequest = {
+      replyToken: userId,
+      messages: [{
+        type: 'image',
+        originalContentUrl: uploadImage.link,
+        previewImageUrl: uploadImage.link
       }]
     };
     await this.lineClient.replyMessage(message);

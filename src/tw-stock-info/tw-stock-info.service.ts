@@ -221,7 +221,7 @@ export class TwStockInfoService {
                 symbol: symbol,
                 image: image,
             });
-
+            Logger.log('傳送圖表');
             return result;
         }
         catch (error) {
@@ -237,6 +237,7 @@ export class TwStockInfoService {
             const page = await this.browserService.GetPage();
 
             // 載入網頁
+            Logger.log('載入網頁');
             await page.goto(this.cnyesUrl + symbol);
 
             interface InfoDictionary {
@@ -244,19 +245,23 @@ export class TwStockInfoService {
             }
 
             // 等待圖表載入
+            Logger.log('等待圖表載入');
             await page.waitForSelector('div.simple-chart table');
 
             // 取得股票名稱
+            Logger.log('取得股票名稱');
             const element = await page.waitForSelector('div.quote-header h2');
             const textContent = await element.evaluate(el => el.innerText);
             const stockName = textContent.split('\n')[0] || '未知股票';
 
             // 取得詳細報價
+            Logger.log('取得詳細報價');
             const detailContent = await page.waitForSelector('div.detail-content');
             const stockDetails = await detailContent.evaluate(el => el.innerText);
             const stockDetailsList = stockDetails.split('\n');
 
             // 取得股價相關資訊
+            Logger.log('取得股價相關資訊');
             const priceElement = await page.waitForSelector('div.container .price h3');
             const price = await priceElement.evaluate(el => el.innerText);
 
@@ -296,6 +301,7 @@ export class TwStockInfoService {
             }
 
             // 等待圖表載入
+            Logger.log('等待圖表載入');
             await page.waitForNetworkIdle();
             const chartElement = await page.waitForSelector('div.overview-top');
 
@@ -307,7 +313,7 @@ export class TwStockInfoService {
                 details: chart,
                 image: await chartElement.screenshot()
             };
-
+            Logger.log('傳送圖表');
             return result;
         }
         catch (error) {

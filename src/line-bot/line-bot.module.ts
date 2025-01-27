@@ -4,9 +4,10 @@ import { LineBotController } from './line-bot.controller';
 import { ConfigService } from '@nestjs/config';
 import { messagingApi } from '@line/bot-sdk';
 import { TwStockInfoModule } from 'src/tw-stock-info/tw-stock-info.module';
+import { ImgurModule } from 'src/imgur/imgur.module';
 
 @Module({
-  imports: [TwStockInfoModule],
+  imports: [TwStockInfoModule,ImgurModule],
   controllers: [LineBotController],
   providers: [
     {
