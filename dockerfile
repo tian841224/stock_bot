@@ -1,49 +1,52 @@
-# Use the official Node.js 16 image as a parent image
-FROM node:18
+# ========== 第一階段 (Builder) ==========
+FROM node:22-alpine AS builder
 
-# Set the working directory
-WORKDIR /usr/src/app
+# 設定工作目錄
+WORKDIR /app
 
-# Install necessary dependencies for Puppeteer and Chrome
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    curl \
-    unzip \
-    build-essential  # 加入這行，確保有基本建構工具
-
-# 直接下載並安裝 ChromeDriver 和 Chromium
-RUN curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
-    && CHROME_DRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE) \
-    && wget -N https://chromedriver.storage.googleapis.com/${CHROME_DRIVER_VERSION}/chromedriver_linux64.zip -P ~/tmp \
-    && unzip ~/tmp/chromedriver_linux64.zip -d ~/tmp \
-    && mv ~/tmp/chromedriver /usr/local/bin/chromedriver \
-    && chmod +x /usr/local/bin/chromedriver
-
-# Copy package.json and package-lock.json
+# 複製 package.json 和 package-lock.json，並安裝所有相依套件（包含開發環境）
 COPY package*.json ./
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    && npm install
 
-# Install dependencies with specific flags
-RUN npm install --legacy-peer-deps
-
-# Explicitly install form-data
-# RUN npm install form-data
-
-# Copy the rest of your app's source code
+# 複製應用程式程式碼，並進行編譯
 COPY . .
-
-# Build your app
 RUN npm run build
 
-# Clean up to reduce image size
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# ========== 第二階段 (Runtime) ==========
+FROM node:22-alpine AS runtime
 
-# Expose the port your app runs on
+# 設定工作目錄
+WORKDIR /app
+
+# 設定 Puppeteer 和 Chromium 相關環境變數，避免執行錯誤
+ENV CHROME_BIN=/usr/bin/chromium-browser \
+    CHROME_PATH=/usr/lib/chromium/ 
+
+# 只安裝 Chromium 及其他執行時所需的工具（不包含開發工具）
+RUN apk add --no-cache \
+    bash \
+    curl \
+    wget \
+    unzip \
+    chromium \
+    chromium-chromedriver \
+    libstdc++
+
+# 設定 ChromeDriver 的權限
+RUN chmod +x /usr/bin/chromedriver
+
+# **從第一階段 (builder) 複製檔案
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/.env ./
+
+# 開啟 3000 端口
 EXPOSE 3000
 
-# Start the app
-CMD ["npm", "run", "start:prod"]
+# 設定容器啟動時執行的指令
+CMD ["node", "dist/main.js"]
