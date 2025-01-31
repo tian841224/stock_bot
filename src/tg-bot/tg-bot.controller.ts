@@ -3,6 +3,7 @@ import { TgBotService } from './tg-bot.service';
 import { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { BrowserService } from 'src/browser/browser.service';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 
 @Controller('tg-bot')
 export class TgBotController {
@@ -12,6 +13,7 @@ export class TgBotController {
         private readonly configService: ConfigService
     ) { }
 
+    @ApiExcludeEndpoint()
     @Post()
     @HttpCode(200)
     async handleWebhook(@Req() req: Request, @Res() res: Response) {

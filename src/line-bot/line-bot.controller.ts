@@ -1,12 +1,14 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { LineBotService } from './line-bot.service';
 import { LineBotGuard } from './line-bot.guard';
+import { ApiExcludeEndpoint } from '@nestjs/swagger';
 
 @Controller('lineBot')
 export class LineBotController {
   constructor(private readonly lineBotService: LineBotService) { }
 
   @Post('/callback')
+  @ApiExcludeEndpoint()
   @UseGuards(LineBotGuard)
   async handleCallback(@Body() body: any) {
     try {
