@@ -21,13 +21,17 @@ export class BrowserService {
 
   async disposeBrowser() {
     await this.page?.close();
+    console.log('釋放Page');
     await this.browser?.close();
+    console.log('釋放Browser');
   }
 
   private async createBrowser() {
     try {
       if (this.browser == null) {
         this.browser = await puppeteer.launch({
+          // 使用docker時，需要設定此參數
+          executablePath: '/usr/bin/chromium-browser',
           headless: true,
           args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
