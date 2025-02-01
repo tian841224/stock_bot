@@ -6,43 +6,60 @@ export class BrowserService {
   private browser: Browser;
   private page: Page;
 
-  async initBrowser() {
-    this.createBrowser();
-    this.createPage();
+  // constructor() { 
+  //   this.createBrowser();
+  //   this.createPage();
+  // }
+
+  async GetPage():Promise<Page> {
+    if(this.browser == null || this.page == null){
+      await this.createPage();
+    }
+    
+    return this.page;
   }
 
-  async closeBrowser() {
+  async disposeBrowser() {
     await this.page?.close();
+    console.log('釋放Page');
     await this.browser?.close();
+    console.log('釋放Browser');
   }
 
   private async createBrowser() {
     try {
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setud-sandbox'],
-      });
+      if (this.browser == null) {
+        this.browser = await puppeteer.launch({
+          // 使用docker時，需要設定此參數
+          executablePath: '/usr/bin/chromium-browser',
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
 
-      if (this.browser == null) throw new Error('Browser建立失敗');
-      console.log('Browser建立成功');
+        if (this.browser == null) throw new Error('Browser建立失敗');
+        console.log('Browser建立成功');
+      }
+
     } catch (error: any) {
       await this.browser?.close();
-      throw new Error(`[initBrowser] : ${error.message}`);
+      throw new Error(`[createBrowser] : ${error.message}`);
     }
   }
 
   private async createPage() {
     try {
       if (this.browser == null) await this.createBrowser();
+      if (this.page == null) {
+        this.page = await this.browser.newPage();
+        await this.page.setViewport({ width: 1920, height: 1080 });
 
-      const page = await this.browser.newPage();
-      await page.setViewport({ width: 1920, height: 1080 });
+        if (this.page == null) throw new Error('Page建立失敗');
+        console.log('Page建立成功');
+      }
 
-      if (this.page == null) throw new Error('Page建立失敗');
-      console.log('Page建立成功');
     } catch (error: any) {
-      await this.page.close;
-      throw new Error(`[initPage] : ${error.message}`);
+      await this.page?.close();
+      throw new Error(`[createPage] : ${error.message}`);
     }
   }
 }
