@@ -3,7 +3,7 @@ import { TgBotService } from './tg-bot.service';
 import { TelegrafModule } from 'nestjs-telegraf';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TgBotController } from './tg-bot.controller';
-import { BrowserModule } from 'src/browser/browser.module';
+import { BrowserModule } from '../browser/browser.module';
 
 @Module({
   imports: [

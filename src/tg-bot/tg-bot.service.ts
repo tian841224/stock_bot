@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Command, InjectBot, Next, On, Start, Use } from 'nestjs-telegraf';
-import { TwStockInfoService } from 'src/tw-stock-info/tw-stock-info.service';
+import { InjectBot } from 'nestjs-telegraf';
+import { TwStockInfoService } from '../tw-stock-info/tw-stock-info.service';
 import { Context, Telegraf, Telegram } from 'telegraf';
-import { Message, Update } from 'telegraf/typings/core/types/typegram';
+import { Message } from 'telegraf/typings/core/types/typegram';
 
 @Injectable()
 export class TgBotService {
