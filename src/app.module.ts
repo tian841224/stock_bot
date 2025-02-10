@@ -9,6 +9,11 @@ import { TwStockInfoModule } from './tw-stock-info/tw-stock-info.module';
 import { TgBotModule } from './tg-bot/tg-bot.module';
 import { ImgurModule } from './imgur/imgur.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { NotificationHistoryModule } from './repository/notification-history/notification-history.module';
+import { RepositoryModule } from './repository/repository.module';
+import { UserModule } from './repository/user/user.module';
+import { SubscriptionModule } from './repository/subscription/subscription.module';
+import { SubscriptionStockModule } from './repository/subscription-stock/subscription-stock.module';
 
 @Module({
   imports: [
@@ -52,6 +57,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     UsStockInfoModule,
     TwStockInfoModule,
     ImgurModule,
+    RepositoryModule,
+    UserModule,
+    SubscriptionModule,
+    SubscriptionStockModule,
+    NotificationHistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
