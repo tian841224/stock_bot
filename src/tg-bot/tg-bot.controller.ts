@@ -24,7 +24,6 @@ export class TgBotController {
             return res.sendStatus(403);
         }
 
-        // 處理更新
         try {
             await this.tgBotService.handleUpdate(req.body);
 

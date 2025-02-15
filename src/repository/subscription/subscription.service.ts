@@ -1,25 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { Subscription } from 'src/model/entity/subscription.entity';
 import { SubscriptionItem } from 'src/model/enum/subscription-item.enum';
 
 @Injectable()
 export class SubscriptionService {
+  private readonly logger = new Logger(SubscriptionService.name);
+
   constructor(
     @InjectRepository(Subscription)
     private repository: Repository<Subscription>,
   ) { }
 
-  async create(createSubscriptionDto: CreateSubscriptionDto): Promise<boolean> {
+  async create(createSubscriptionDto: CreateSubscriptionDto): Promise<boolean>{
     try {
       await this.repository.save(createSubscriptionDto);
       return true;
     } catch (e) {
-      console.error(e);
-      return false;
+      this.logger.error(e);
+       throw e;
     }
   }
 
@@ -35,15 +37,29 @@ export class SubscriptionService {
     return await this.repository.findBy({ userId });
   }
 
-  async getIdByUserIdAndItem(userId: string, item: SubscriptionItem): Promise<number> {
-    return (await this.repository.findOneBy({ userId, item })).id;
+  async findByUserIdAndItem(userId: string, item: SubscriptionItem): Promise<Subscription> {
+    return await this.repository.findOneBy({ userId, item });
+  }
+
+  async getIdByUserIdAndItem(userId: string, item: SubscriptionItem): Promise<Subscription> {
+    return (await this.repository.findOneBy({ userId, item }));
   }
 
   async update(id: number, updateSubscriptionDto: UpdateSubscriptionDto) {
-    return await this.repository.update(id, updateSubscriptionDto);
+    try {
+      return await this.repository.update(id, updateSubscriptionDto);
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
   }
 
-  async remove(id: number) {
-    return await this.repository.delete(id);
+  async remove(id: number): Promise<DeleteResult> {
+    try {
+      return await this.repository.delete(id);
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
   }
 }

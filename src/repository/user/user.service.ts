@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +7,7 @@ import { User } from 'src/model/entity/user.entity';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
 
   constructor(
     @InjectRepository(User)
@@ -19,8 +20,8 @@ export class UserService {
       return true;
     }
     catch (e) {
-      console.error(e);
-      return false;
+      this.logger.error(e);
+      throw e;
     }
   }
 
@@ -37,7 +38,13 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<UpdateResult> {
-    return await this.repository.update(id, updateUserDto);
+    try {
+      return await this.repository.update(id,updateUserDto);
+    }
+    catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
   }
 
   // async remove(id: number) {
