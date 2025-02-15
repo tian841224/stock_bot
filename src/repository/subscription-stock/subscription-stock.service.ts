@@ -1,24 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateSubscriptionStockDto } from './dto/create-subscription-stock.dto';
 import { UpdateSubscriptionStockDto } from './dto/update-subscription-stock.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubscriptionStock } from 'src/model/entity/subscription-stock.entity';
-import { Repository } from 'typeorm';
+import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 
 @Injectable()
 export class SubscriptionStockService {
+  private readonly logger = new Logger(SubscriptionStockService.name);
+
   constructor(
     @InjectRepository(SubscriptionStock)
     private repository: Repository<SubscriptionStock>,
   ) { }
 
-  async create(createSubscriptionStockDto: CreateSubscriptionStockDto) {
+  async create(createSubscriptionStockDto: CreateSubscriptionStockDto): Promise<boolean> {
     try {
       await this.repository.save(createSubscriptionStockDto);
       return true;
     } catch (e) {
-      console.error(e);
-      return false;
+      this.logger.error(e);
+      throw e;
     }
   }
 
@@ -27,17 +29,31 @@ export class SubscriptionStockService {
   }
 
   async findOne(id: number): Promise<SubscriptionStock> {
-    return await this.repository.findOneBy({id});
+    return await this.repository.findOneBy({ id });
   }
 
   async findBySubscriptionId(subscriptionId: number): Promise<SubscriptionStock[]> {
     return await this.repository.findBy({ subscription: { id: subscriptionId } });
   }
-  async update(id: number, updateSubscriptionStockDto: UpdateSubscriptionStockDto) {
-    return await this.repository.update(id, updateSubscriptionStockDto);
+
+  async findBySubscriptionIdAndStock(subscriptionId: number, stock: string): Promise<SubscriptionStock> {
+    return await this.repository.findOneBy({ subscription: { id: subscriptionId }, stock: stock });
   }
 
-  async remove(id: number) {
-    return await this.repository.delete(id);
+  async update(id: number, updateSubscriptionStockDto: UpdateSubscriptionStockDto): Promise<UpdateResult> {
+    try {
+      return await this.repository.update(id, updateSubscriptionStockDto);;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async remove(id: number): Promise<DeleteResult> {
+    try {
+      return await this.repository.delete(id);;
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
   }
 }

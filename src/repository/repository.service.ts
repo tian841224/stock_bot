@@ -62,6 +62,7 @@ export class RepositoryService {
             createSubscriptionDto.userId = user.userid;
             createSubscriptionDto.item = item;
             await this.subscriptionService.create(createSubscriptionDto);
+            this.logger.log(`addUserSubscriptionItemAsync:新增訂閱項目成功, userId: ${user.userid}`);
             return true;
         } catch (e) {
             this.logger.error(`addUserSubscriptionItem`, e);
@@ -84,6 +85,7 @@ export class RepositoryService {
             const updateSubscriptionDto = new UpdateSubscriptionDto();
             updateSubscriptionDto.status = status;
             await this.subscriptionService.update(userSubscription.id, updateSubscriptionDto);
+            this.logger.log(`updateUserSubscriptionItemAsync:更新訂閱項目成功, userId: ${user.userid}`);
             return true
         } catch (e) {
             this.logger.error(`updateUserSubscriptionItem`, e);
@@ -104,7 +106,9 @@ export class RepositoryService {
             const createSubscriptionStockDto = new CreateSubscriptionStockDto();
             createSubscriptionStockDto.subscriptionId = userSubscription.id;
             createSubscriptionStockDto.stock = stock;
-            return await this.subscriptionStockService.create(createSubscriptionStockDto);
+            await this.subscriptionStockService.create(createSubscriptionStockDto);
+            this.logger.log(`addUserSubscriptionStockAsync:新增使用者訂閱股票, userId: ${userId}`);
+            return true;
         } catch (e) {
             this.logger.error(`addUserSubscriptionItem`, e);
             throw e;
@@ -121,7 +125,8 @@ export class RepositoryService {
             }
             // 取得使用者訂閱股票
             var userSubscriptionStock = await this.findUserSubscriptionStockAsync(userId, stock);
-            const result = await this.subscriptionStockService.remove(userSubscriptionStock.id);
+            await this.subscriptionStockService.remove(userSubscriptionStock.id);
+            this.logger.log(`deleteUserSubscriptionStockAsync:更新使用者股票訂閱, userId: ${userId}`);
             return true
         } catch (e) {
             this.logger.error(`updateUserSubscriptionItem`, e);
@@ -148,6 +153,7 @@ export class RepositoryService {
             }
 
             user = await this.userService.findByUserId(userId);
+            this.logger.log(`getUser:取得使用者 ${user.userid}`);
             return user;
         }
         catch (e) {
