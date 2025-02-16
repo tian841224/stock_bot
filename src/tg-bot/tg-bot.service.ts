@@ -3,7 +3,6 @@ import { InjectBot } from 'nestjs-telegraf';
 import { TwStockInfoService } from '../tw-stock-info/tw-stock-info.service';
 import { Context, Telegraf, Telegram } from 'telegraf';
 import { Message } from 'telegraf/typings/core/types/typegram';
-import { SubscriptionItem } from 'src/model/enum/subscription-item.enum';
 import { RepositoryService } from 'src/repository/repository.service';
 
 @Injectable()
@@ -79,6 +78,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getKlineAsync');
+            throw error;
         }
     }
 
@@ -104,6 +104,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getPerformanceAsync');
+            throw error;
         }
 
     }
@@ -129,6 +130,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getDetailPriceAsync');
+            throw error;
         }
     }
 
@@ -159,6 +161,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getNewsAsync');
+            throw error;
         }
     }
 
@@ -189,6 +192,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getYahooNewsAsync');
+            throw error;
         }
     }
 
@@ -220,6 +224,7 @@ export class TgBotService {
             await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getDailyMarketInfoAsync');
+            throw error;
         }
     }
 
@@ -246,6 +251,7 @@ export class TgBotService {
             await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getTopVolumeItemsAsync');
+            throw error;
         }
     }
 
@@ -277,13 +283,12 @@ export class TgBotService {
             await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getAfterTradingVolumeAsync');
+            throw error;
         }
     }
 
-    // CRUD
-
     // 新增使用者訂閱項目
-    async addUserSubscriptionAsync(message: Message.TextMessage, item: string) {
+    private async addUserSubscriptionAsync(message: Message.TextMessage, item: string) {
         try {
             const userId = message.chat.id.toString();
             const subscription: number = Number(item);
@@ -292,11 +297,13 @@ export class TgBotService {
             await this.tgBot.sendMessage(message.chat.id, '訂閱成功');
         } catch (error) {
             this.logger.error(error, 'addUserSubscription');
+            await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
+            throw error;
         }
     }
 
     // 更新使用者訂閱項目
-    async updateUserSubscriptionAsync(message: Message.TextMessage, item: string, status: number) {
+    private async updateUserSubscriptionAsync(message: Message.TextMessage, item: string, status: number) {
         try {
             const userId = message.chat.id.toString();
             const subscription: number = Number(item);
@@ -318,10 +325,12 @@ export class TgBotService {
 
         } catch (error) {
             this.logger.error(error, 'updateUserSubscription');
+            await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
+            throw error;
         }
     }
 
-    async addSubscriptionStockAsync(message: Message.TextMessage, str: string) {
+    private async addSubscriptionStockAsync(message: Message.TextMessage, str: string) {
         try {
             const userId = message.chat.id.toString();
             await this.repositoryService.addUserSubscriptionStockAsync(userId, str);
@@ -330,10 +339,11 @@ export class TgBotService {
         } catch (error) {
             this.logger.error(error);
             await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
+            throw error;
         }
     }
 
-    async deleteSubscriptionStockAsync(message: Message.TextMessage, str: string) {
+    private async deleteSubscriptionStockAsync(message: Message.TextMessage, str: string) {
         try {
             const userId = message.chat.id.toString();
             await this.repositoryService.deleteUserSubscriptionStockAsync(userId, str);
@@ -342,6 +352,7 @@ export class TgBotService {
         } catch (error) {
             this.logger.error(error);
             await this.tgBot.sendMessage(message.chat.id, '取消訂閱失敗');
+            throw error;
         }
     }
 
