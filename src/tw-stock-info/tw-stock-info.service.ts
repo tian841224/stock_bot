@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import * as Parser from 'rss-parser';  // 正確的方式
-import { BrowserService } from 'src/browser/browser.service';
+import * as Parser from 'rss-parser';
+import { BrowserService } from '../browser/browser.service';
 import { TopVolumeItemsResponseDto } from './interface/top-volume-item-response-dto';
 import { AfterTradingVolumeResponseDto } from './interface/after-trading-volume-response-dto';
 import { DailyMarketInfoResponseDto } from './interface/daily-market-Info-response-dto';
@@ -17,7 +17,7 @@ export class TwStockInfoService {
     constructor(
         private readonly browserService: BrowserService,
     ) { }
-    
+
 
     // 當月市場成交資訊
     async getDailyMarketInfoAsync(count: number = 1): Promise<DailyMarketInfoResponseDto[]> {
@@ -329,15 +329,18 @@ export class TwStockInfoService {
             const page = await this.browserService.GetPage();
 
             // 載入網頁
+            Logger.log(`載入網頁:${this.cnyesUrl + symbol}`);
             await page.goto(this.cnyesUrl + symbol);
 
             // 處理 cookie 提示
+            Logger.log('處理 cookie 提示');
             const cookieButton = await page.waitForSelector("#__next > div._1GCLL > div > button._122qv", { timeout: 5000 });
             if (cookieButton) {
                 await cookieButton.click();
             }
 
             // 滾動頁面到底部
+            Logger.log('滾動頁面到底部');
             await page.evaluate(() => {
                 window.scrollTo({
                     top: document.body.scrollHeight,
@@ -346,21 +349,25 @@ export class TwStockInfoService {
             });
 
             // 等待圖表和數據載入
+            Logger.log('等待圖表和數據載入');
             await page.waitForSelector('div.overview-top');
             await page.waitForSelector('table.flex');
 
             // 取得股票名稱
+            Logger.log('取得股票名稱');
             const element = await page.waitForSelector('div.quote-header h2');
             const textContent = await element.evaluate(el => el.innerText);
             const stockName = textContent.split('\n')[0] || '未知股票';
 
             // 等待價格元素
+            Logger.log('等待價格元素');
             const priceElement = await page.waitForSelector('#tw-stock-tabs div:nth-child(2) section');
             if (!priceElement) {
                 throw new Error('找不到價格元素');
             }
 
             // 等待網路請求完成
+            Logger.log('等待網路請求完成');
             await page.waitForNetworkIdle();
 
             Logger.log('擷取網站中...');

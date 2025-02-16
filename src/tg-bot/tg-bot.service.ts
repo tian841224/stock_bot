@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Command, InjectBot, Next, On, Start, Use } from 'nestjs-telegraf';
-import { TwStockInfoService } from 'src/tw-stock-info/tw-stock-info.service';
+import { InjectBot } from 'nestjs-telegraf';
+import { TwStockInfoService } from '../tw-stock-info/tw-stock-info.service';
 import { Context, Telegraf, Telegram } from 'telegraf';
-import { Message, Update } from 'telegraf/typings/core/types/typegram';
+import { Message } from 'telegraf/typings/core/types/typegram';
+import { RepositoryService } from 'src/repository/repository.service';
 
 @Injectable()
 export class TgBotService {
@@ -12,6 +13,7 @@ export class TgBotService {
         @InjectBot()
         private bot: Telegraf<Context>,
         private readonly twStockInfoService: TwStockInfoService,
+        private readonly repositoryService: RepositoryService
     ) {
         this.tgBot = this.bot.telegram;
     }
@@ -76,6 +78,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getKlineAsync');
+            throw error;
         }
     }
 
@@ -101,6 +104,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getPerformanceAsync');
+            throw error;
         }
 
     }
@@ -126,6 +130,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getDetailPriceAsync');
+            throw error;
         }
     }
 
@@ -156,6 +161,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getNewsAsync');
+            throw error;
         }
     }
 
@@ -186,6 +192,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getYahooNewsAsync');
+            throw error;
         }
     }
 
@@ -205,7 +212,7 @@ export class TgBotService {
             let result = await this.twStockInfoService.getDailyMarketInfoAsync(count);
             let messageText = '<b>台灣股市大盤資訊</b>\n\n';
             for (const row of result) {
-                messageText += `<b>${row.index}</b>\n`;
+                messageText += `<b>${row.date}</b>\n`;
                 messageText += `<code>`;
                 messageText += `成交股數：${row.volume}\n`;
                 messageText += `成交金額：${row.amount}\n`;
@@ -217,6 +224,7 @@ export class TgBotService {
             await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getDailyMarketInfoAsync');
+            throw error;
         }
     }
 
@@ -243,6 +251,7 @@ export class TgBotService {
             await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getTopVolumeItemsAsync');
+            throw error;
         }
     }
 
@@ -274,6 +283,76 @@ export class TgBotService {
             await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getAfterTradingVolumeAsync');
+            throw error;
+        }
+    }
+
+    // 新增使用者訂閱項目
+    private async addUserSubscriptionAsync(message: Message.TextMessage, item: string) {
+        try {
+            const userId = message.chat.id.toString();
+            const subscription: number = Number(item);
+
+            await this.repositoryService.addUserSubscriptionItemAsync(userId, subscription);
+            await this.tgBot.sendMessage(message.chat.id, '訂閱成功');
+        } catch (error) {
+            this.logger.error(error, 'addUserSubscription');
+            await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
+            throw error;
+        }
+    }
+
+    // 更新使用者訂閱項目
+    private async updateUserSubscriptionAsync(message: Message.TextMessage, item: string, status: number) {
+        try {
+            const userId = message.chat.id.toString();
+            const subscription: number = Number(item);
+
+            // 取得使用者訂閱項目
+            const userSubItem = await this.repositoryService.getUserSubscriptionByItemAsync(userId, subscription);
+            if (userSubItem === null) {
+                await this.addUserSubscriptionAsync(message, item);
+                return;
+            }
+
+            await this.repositoryService.updateUserSubscriptionItemAsync(userId, subscription, status);
+
+            if (status === 0) {
+                await this.tgBot.sendMessage(message.chat.id, '取消訂閱成功');
+            } else {
+                await this.tgBot.sendMessage(message.chat.id, '訂閱成功');
+            }
+
+        } catch (error) {
+            this.logger.error(error, 'updateUserSubscription');
+            await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
+            throw error;
+        }
+    }
+
+    private async addSubscriptionStockAsync(message: Message.TextMessage, str: string) {
+        try {
+            const userId = message.chat.id.toString();
+            await this.repositoryService.addUserSubscriptionStockAsync(userId, str);
+            await this.tgBot.sendMessage(message.chat.id, '訂閱成功');
+
+        } catch (error) {
+            this.logger.error(error);
+            await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
+            throw error;
+        }
+    }
+
+    private async deleteSubscriptionStockAsync(message: Message.TextMessage, str: string) {
+        try {
+            const userId = message.chat.id.toString();
+            await this.repositoryService.deleteUserSubscriptionStockAsync(userId, str);
+            await this.tgBot.sendMessage(message.chat.id, '取消訂閱成功');
+
+        } catch (error) {
+            this.logger.error(error);
+            await this.tgBot.sendMessage(message.chat.id, '取消訂閱失敗');
+            throw error;
         }
     }
 
@@ -286,44 +365,49 @@ export class TgBotService {
 
     private async handleCommand(message: Message.TextMessage) {
         const messageText = message.text;
-
-        const str = messageText.split(' ')[1];
-        if (str != null) {
-            // 檢查是否為純數字
-            if (!str?.match(/^\d+$/)) {
-                return;
-            }
-        }
+        const command1 = messageText.split(' ')[1];
 
         switch (messageText.split(' ')[0]) {
             case '/start':
                 this.start(message);
                 break;
             case '/k':
-                await this.getKlineAsync(message, str);
+                await this.getKlineAsync(message, command1);
                 break;
             case '/p':
-                await this.getPerformanceAsync(message, str);
+                await this.getPerformanceAsync(message, command1);
                 break;
             case '/d':
-                await this.getDetailPriceAsync(message, str);
+                await this.getDetailPriceAsync(message, command1);
                 break;
             case '/n':
-                await this.getNewsAsync(message, str);
+                await this.getNewsAsync(message, command1);
                 break;
             case '/yn':
-                await this.getYahooNewsAsync(message, str);
+                await this.getYahooNewsAsync(message, command1);
                 break;
             case '/m':
-                await this.getDailyMarketInfoAsync(message, str);
+                await this.getDailyMarketInfoAsync(message, command1);
                 break;
             case '/t':
                 await this.getTopVolumeItemsAsync(message);
                 break;
             case '/i':
-                await this.getAfterTradingVolumeAsync(message, str);
+                await this.getAfterTradingVolumeAsync(message, command1);
+                break;
+            case '/sub':
+                await this.updateUserSubscriptionAsync(message, command1, 1);
+                break;
+            case '/unsub':
+                await this.updateUserSubscriptionAsync(message, command1, 0);
+                break;
+            case '/add':
+                await this.addSubscriptionStockAsync(message, command1);
+                break;
+            case '/del':
+                await this.deleteSubscriptionStockAsync(message, command1);
+            default:
                 break;
         }
     }
-
 }

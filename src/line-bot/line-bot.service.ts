@@ -2,11 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as line from '@line/bot-sdk';
 import { FlexBubble, FlexMessage, Message, PushMessageRequest, ReplyMessageRequest } from '@line/bot-sdk/dist/messaging-api/api';
 import { WebhookEvent } from '@line/bot-sdk';
-import { TwStockInfoService } from 'src/tw-stock-info/tw-stock-info.service';
-import { TopVolumeItemsResponseDto } from 'src/tw-stock-info/interface/top-volume-item-response-dto';
-import { AfterTradingVolumeResponseDto } from 'src/tw-stock-info/interface/after-trading-volume-response-dto';
-import { DailyMarketInfoResponseDto } from 'src/tw-stock-info/interface/daily-market-Info-response-dto';
-import { ImgurService } from 'src/imgur/imgur.service';
+import { TwStockInfoService } from '../tw-stock-info/tw-stock-info.service';
+import { TopVolumeItemsResponseDto } from '../tw-stock-info/interface/top-volume-item-response-dto';
+import { AfterTradingVolumeResponseDto } from '../tw-stock-info/interface/after-trading-volume-response-dto';
+import { DailyMarketInfoResponseDto } from '../tw-stock-info/interface/daily-market-Info-response-dto';
+import { ImgurService } from '../imgur/imgur.service';
 
 @Injectable()
 export class LineBotService {

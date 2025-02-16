@@ -2,7 +2,7 @@ import { Controller, Post, Req, Res, HttpCode } from '@nestjs/common';
 import { TgBotService } from './tg-bot.service';
 import { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { BrowserService } from 'src/browser/browser.service';
+import { BrowserService } from '../browser/browser.service';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
 
 @Controller('tg-bot')
@@ -24,7 +24,6 @@ export class TgBotController {
             return res.sendStatus(403);
         }
 
-        // 處理更新
         try {
             await this.tgBotService.handleUpdate(req.body);
 

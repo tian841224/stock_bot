@@ -3,8 +3,8 @@ import { LineBotService } from './line-bot.service';
 import { LineBotController } from './line-bot.controller';
 import { ConfigService } from '@nestjs/config';
 import { messagingApi } from '@line/bot-sdk';
-import { TwStockInfoModule } from 'src/tw-stock-info/tw-stock-info.module';
-import { ImgurModule } from 'src/imgur/imgur.module';
+import { TwStockInfoModule } from '../tw-stock-info/tw-stock-info.module';
+import { ImgurModule } from '../imgur/imgur.module';
 
 @Module({
   imports: [TwStockInfoModule,ImgurModule],
