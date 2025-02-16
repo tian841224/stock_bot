@@ -11,6 +11,7 @@ import { CreateUserDto } from './user/dto/create-user.dto';
 import { UpdateSubscriptionDto } from './subscription/dto/update-subscription.dto';
 import { CreateSubscriptionStockDto } from './subscription-stock/dto/create-subscription-stock.dto';
 
+// TODO : 查詢使用者訂閱股票代號是否存在
 @Injectable()
 export class RepositoryService {
     private readonly logger = new Logger(RepositoryService.name);
@@ -102,6 +103,7 @@ export class RepositoryService {
                 await this.addUserSubscriptionItemAsync(userId, SubscriptionItem.StockInfo);
                 userSubscription = await this.getUserSubscriptionByItemAsync(userId, SubscriptionItem.StockInfo);
             }
+
             // 新增訂閱
             const createSubscriptionStockDto = new CreateSubscriptionStockDto();
             createSubscriptionStockDto.subscriptionId = userSubscription.id;
