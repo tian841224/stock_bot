@@ -92,4 +92,5 @@ jobs:
             fi
 
             sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
-            sudo docker run -d --name $REPO_NAME --restart=unless-stopped ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+            sudo docker run -d --name $REPO_NAME --restart=unless-stopped -p 3000:3000 ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+
