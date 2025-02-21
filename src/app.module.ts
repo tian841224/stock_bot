@@ -37,18 +37,20 @@ import { SubscriptionStockModule } from './repository/subscription-stock/subscri
         //   };
         // } else {
         //   // 預設使用 sqlite
-          return {
-            type: 'sqlite' as const,
-            database: config.get<string>('SQLITE_DB') || 'stock-bot.db',
-            entities: [__dirname + '/**/model/entity/*.entity{.ts,.js}'],
-            synchronize: true, // 開發階段使用，自動同步實體
-        //   };
+        return {
+          type: 'sqlite' as const,
+          database: config.get<string>('SQLITE_DB') || 'stock-bot.db',
+          entities: [__dirname + '/**/model/entity/*.entity{.ts,.js}'],
+          synchronize: true, // 開發階段使用，自動同步實體
+          //   };
         }
       },
     }),
     ConfigModule.forRoot({
-      // 根據 process.env.NODE_ENV 決定要載入哪個設定檔，預設為 development
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      // 根據 process.env.NODE_ENV 決定要載入哪個設定檔，若沒有設定則讀取預設的 .env 檔案
+      envFilePath: process.env.NODE_ENV
+        ? `.env.${process.env.NODE_ENV}`  // 如果有設定 NODE_ENV，則載入對應的檔案
+        : '.env',                         // 沒有設定時，讀取預設的 .env 檔案
       isGlobal: true, // 全域使用
     }),
     BrowserModule,

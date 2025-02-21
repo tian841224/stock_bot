@@ -1,0 +1,8 @@
+node_modules
+.github
+.git
+test/
+*.log
+.vscode
+.env
+.env.*

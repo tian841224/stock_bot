@@ -27,8 +27,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
 
-  console.log(process.env.NODE_ENV);
-
   await app.listen(port);
 
   console.log(`app listening at http://localhost:${port}`);

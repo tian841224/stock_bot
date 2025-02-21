@@ -210,6 +210,11 @@ export class TgBotService {
             }
 
             let result = await this.twStockInfoService.getDailyMarketInfoAsync(count);
+            if(result == null) {
+                this.logger.log(`getDailyMarketInfoAsync:查無資料`);
+                await this.tgBot.sendMessage(message.chat.id, '查無資料,請確認後再試');
+                return;
+            }
             let messageText = '<b>台灣股市大盤資訊</b>\n\n';
             for (const row of result) {
                 messageText += `<b>${row.date}</b>\n`;
@@ -232,7 +237,11 @@ export class TgBotService {
 
         try {
             let result = await this.twStockInfoService.getTopVolumeItemsAsync();
-
+            if(result == null) {
+                this.logger.log(`getTopVolumeItemsAsync:查無資料`);
+                await this.tgBot.sendMessage(message.chat.id, '查無資料,請確認後再試');
+                return;
+            }
             let messageText = '🔝<b>今日交易量前二十</b>\n\n';
 
             for (const item of result) {
@@ -265,6 +274,11 @@ export class TgBotService {
             }
 
             let result = await this.twStockInfoService.getAfterTradingVolumeAsync(symbol);
+            if(result == null) {
+                this.logger.log(`getAfterTradingVolumeAsync:查無資料`);
+                await this.tgBot.sendMessage(message.chat.id, '查無資料,請確認後再試');
+                return;
+            }
 
             const emoji = result.upDownSign === '+' ? '📈' : result.upDownSign === '-' ? '📉' : '';
 
