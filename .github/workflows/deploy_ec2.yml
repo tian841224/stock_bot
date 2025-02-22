@@ -20,23 +20,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Write .env file
-        run: |
-          echo "DB_TYPE=${{ secrets.DB_TYPE }}" > .env
-          echo "SQLITE_DB=${{ secrets.SQLITE_DB }}" >> .env
-          echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> .env
-          echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
-          echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
-          echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
-          echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
-          echo "CHANNEL_ACCESS_TOKEN=${{ secrets.CHANNEL_ACCESS_TOKEN }}" >> .env
-          echo "CHANNEL_SECRET=${{ secrets.CHANNEL_SECRET }}" >> .env
-          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
-          echo "TELEGRAM_BOT_WEBHOOK_DOMAIN=${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}" >> .env
-          echo "TELEGRAM_BOT_WEBHOOK_PATH=${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}" >> .env
-          echo "TELEGRAM_BOT_SECRET_TOKEN=${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}" >> .env
-          echo "IMGUR_CLIENT_ID=${{ secrets.IMGUR_CLIENT_ID }}" >> .env
-
       - name: Build NestJS app
         run: npm run build
 
@@ -82,15 +65,61 @@ jobs:
               exit 1
             fi
 
+            echo "Creating .env file..."
+            cat > ~/.env << EOL
+            DB_TYPE=${{ secrets.DB_TYPE }}
+            SQLITE_DB=${{ secrets.SQLITE_DB }}
+            MYSQL_HOST=${{ secrets.MYSQL_HOST }}
+            MYSQL_PORT=${{ secrets.MYSQL_PORT }}
+            MYSQL_USER=${{ secrets.MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+            CHANNEL_ACCESS_TOKEN=${{ secrets.CHANNEL_ACCESS_TOKEN }}
+            CHANNEL_SECRET=${{ secrets.CHANNEL_SECRET }}
+            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            TELEGRAM_BOT_WEBHOOK_DOMAIN=${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}
+            TELEGRAM_BOT_WEBHOOK_PATH=${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}
+            TELEGRAM_BOT_SECRET_TOKEN=${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}
+            IMGUR_CLIENT_ID=${{ secrets.IMGUR_CLIENT_ID }}
+            EOL
+
+            echo "Checking and cleaning up port 3000..."
+            CONTAINERS_USING_PORT=$(sudo docker ps -q --filter "publish=3000")
+            if [ ! -z "$CONTAINERS_USING_PORT" ]; then
+              echo "Stopping containers using port 3000..."
+              sudo docker stop $CONTAINERS_USING_PORT
+              sudo docker rm $CONTAINERS_USING_PORT
+            fi
+
+            echo "Checking for existing container..."
             if sudo docker ps -a --format '{{.Names}}' | grep -q "^$REPO_NAME$"; then
               echo "Stopping and removing container: $REPO_NAME"
-              sudo docker stop $REPO_NAME || true
-              sudo docker rm $REPO_NAME || true
-              sudo docker rmi -f ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest || true
+              sudo docker stop $REPO_NAME || echo "Failed to stop container"
+              sudo docker rm $REPO_NAME || echo "Failed to remove container"
+              sudo docker rmi -f ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest || echo "Failed to remove image"
             else
               echo "Container $REPO_NAME does not exist, skipping stop/remove."
             fi
 
-            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
-            sudo docker run -d --name $REPO_NAME --restart=unless-stopped -p 3000:3000 ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+            echo "Waiting for port to be released..."
+            sleep 5
 
+            echo "Pulling new image..."
+            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+            
+            echo "Starting new container..."
+            sudo docker run -d --name $REPO_NAME \
+              --restart=unless-stopped \
+              -p 3000:3000 \
+              -v ~/.env:/app/.env \
+              ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+
+            echo "Verifying container status..."
+            if ! sudo docker ps | grep -q "$REPO_NAME"; then
+              echo "Container failed to start"
+              sudo docker logs $REPO_NAME
+              exit 1
+            fi
+
+            echo "Container successfully started"
+            sudo docker ps | grep "$REPO_NAME"

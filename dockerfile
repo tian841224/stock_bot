@@ -31,7 +31,6 @@ ENV CHROME_BIN=/usr/bin/chromium-browser \
 # 只複製必要檔案
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.env ./
 
 EXPOSE 3000
 
