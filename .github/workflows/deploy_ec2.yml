@@ -22,23 +22,29 @@ jobs:
 
       - name: Write .env file
         run: |
-          echo "DB_TYPE=${{ secrets.DB_TYPE }}" > .env
-          echo "SQLITE_DB=${{ secrets.SQLITE_DB }}" >> .env
-          echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> .env
-          echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
-          echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
-          echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
-          echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
-          echo "CHANNEL_ACCESS_TOKEN=${{ secrets.CHANNEL_ACCESS_TOKEN }}" >> .env
-          echo "CHANNEL_SECRET=${{ secrets.CHANNEL_SECRET }}" >> .env
-          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
-          echo "TELEGRAM_BOT_WEBHOOK_DOMAIN=${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}" >> .env
-          echo "TELEGRAM_BOT_WEBHOOK_PATH=${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}" >> .env
-          echo "TELEGRAM_BOT_SECRET_TOKEN=${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}" >> .env
-          echo "IMGUR_CLIENT_ID=${{ secrets.IMGUR_CLIENT_ID }}" >> .env
+          cat << EOF > .env
+          DB_TYPE=${{ secrets.DB_TYPE }}
+          MYSQL_HOST=${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT=${{ secrets.MYSQL_PORT }}
+          MYSQL_USER=${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+          CHANNEL_ACCESS_TOKEN=${{ secrets.CHANNEL_ACCESS_TOKEN }}
+          CHANNEL_SECRET=${{ secrets.CHANNEL_SECRET }}
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_WEBHOOK_DOMAIN=${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}
+          TELEGRAM_BOT_WEBHOOK_PATH=${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}
+          TELEGRAM_BOT_SECRET_TOKEN=${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}
+          IMGUR_CLIENT_ID=${{ secrets.IMGUR_CLIENT_ID }}
+          EOF
 
-      - name: Build NestJS app
-        run: npm run build
+      - name: Verify .env file
+        run: |
+          echo "Verifying .env file contents:"
+          cat .env | sed 's/=.*$/=*** (hidden)/'
+
+            - name: Build NestJS app
+              run: npm run build
 
   Deploy:
     runs-on: ubuntu-latest
