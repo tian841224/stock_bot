@@ -65,7 +65,7 @@ jobs:
               exit 1
             fi
 
-            # Create .env file on EC2
+            echo "Creating .env file..."
             cat > ~/.env << EOL
             DB_TYPE=${{ secrets.DB_TYPE }}
             SQLITE_DB=${{ secrets.SQLITE_DB }}
@@ -83,18 +83,43 @@ jobs:
             IMGUR_CLIENT_ID=${{ secrets.IMGUR_CLIENT_ID }}
             EOL
 
+            echo "Checking and cleaning up port 3000..."
+            CONTAINERS_USING_PORT=$(sudo docker ps -q --filter "publish=3000")
+            if [ ! -z "$CONTAINERS_USING_PORT" ]; then
+              echo "Stopping containers using port 3000..."
+              sudo docker stop $CONTAINERS_USING_PORT
+              sudo docker rm $CONTAINERS_USING_PORT
+            fi
+
+            echo "Checking for existing container..."
             if sudo docker ps -a --format '{{.Names}}' | grep -q "^$REPO_NAME$"; then
               echo "Stopping and removing container: $REPO_NAME"
-              sudo docker stop $REPO_NAME || true
-              sudo docker rm $REPO_NAME || true
-              sudo docker rmi -f ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest || true
+              sudo docker stop $REPO_NAME || echo "Failed to stop container"
+              sudo docker rm $REPO_NAME || echo "Failed to remove container"
+              sudo docker rmi -f ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest || echo "Failed to remove image"
             else
               echo "Container $REPO_NAME does not exist, skipping stop/remove."
             fi
 
+            echo "Waiting for port to be released..."
+            sleep 5
+
+            echo "Pulling new image..."
             sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+            
+            echo "Starting new container..."
             sudo docker run -d --name $REPO_NAME \
               --restart=unless-stopped \
               -p 3000:3000 \
               -v ~/.env:/app/.env \
               ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+
+            echo "Verifying container status..."
+            if ! sudo docker ps | grep -q "$REPO_NAME"; then
+              echo "Container failed to start"
+              sudo docker logs $REPO_NAME
+              exit 1
+            fi
+
+            echo "Container successfully started"
+            sudo docker ps | grep "$REPO_NAME"
