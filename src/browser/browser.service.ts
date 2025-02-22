@@ -31,7 +31,7 @@ export class BrowserService {
       if (this.browser == null) {
         this.browser = await puppeteer.launch({
           // 使用docker時，需要設定此參數
-          // executablePath: '/usr/bin/chromium-browser',
+          executablePath: '/usr/bin/chromium-browser',
           headless: true,
           args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
