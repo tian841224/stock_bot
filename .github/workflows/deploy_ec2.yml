@@ -96,12 +96,17 @@ jobs:
               echo "Stopping and removing container: $REPO_NAME"
               sudo docker stop $REPO_NAME || echo "Failed to stop container"
               sudo docker rm $REPO_NAME || echo "Failed to remove container"
-              sudo docker rmi -f ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest || echo "Failed to remove image"
             else
               echo "Container $REPO_NAME does not exist, skipping stop/remove."
             fi
 
-            echo "Waiting for port to be released..."
+            echo "Removing old images for $REPO_NAME..."
+            sudo docker images -q ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME | sort -u | xargs --no-run-if-empty sudo docker rmi -f || echo "No old images to remove or removal failed"
+
+            echo "Cleaning up unused images..."
+            sudo docker image prune -f || echo "Failed to prune unused images"
+
+            echo "Waiting for cleanup to settle..."
             sleep 5
 
             echo "Pulling new image..."
