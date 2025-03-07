@@ -164,7 +164,7 @@ export class TgBotService {
         }
     }
 
-    private async getYahooNewsAsync(userId: number, symbol: string) {
+    async getYahooNewsAsync(userId: number, symbol: string) {
         try {
             if (symbol == null) {
                 this.logger.log(`getYahooNewsAsync:未輸入股票代號`);
@@ -195,7 +195,7 @@ export class TgBotService {
         }
     }
 
-    private async getDailyMarketInfoAsync(userId: number, num: number) {
+    async getDailyMarketInfoAsync(userId: number, num: number) {
 
         try {
             let count = 1;
@@ -229,7 +229,7 @@ export class TgBotService {
         }
     }
 
-    private async getTopVolumeItemsAsync(userId: number) {
+    async getTopVolumeItemsAsync(userId: number) {
 
         try {
             let result = await this.twStockInfoService.getTopVolumeItemsAsync();
@@ -260,7 +260,7 @@ export class TgBotService {
         }
     }
 
-    private async getAfterTradingVolumeAsync(userId: number, symbol: string) {
+    async getAfterTradingVolumeAsync(userId: number, symbol: string) {
 
         try {
             if (symbol == null) {
@@ -338,7 +338,11 @@ export class TgBotService {
 
     private async addSubscriptionStockAsync(userId: number, str: string) {
         try {
-            await this.repositoryService.addUserSubscriptionStockAsync(userId.toString(), str);
+            const result = await this.repositoryService.addUserSubscriptionStockAsync(userId.toString(), str);
+            if(result === false) {
+                await this.tgBot.sendMessage(userId, '已訂閱過此股票');
+                return;
+            }
             await this.tgBot.sendMessage(userId, '訂閱成功');
 
         } catch (error) {
@@ -351,7 +355,6 @@ export class TgBotService {
         try {
             await this.repositoryService.deleteUserSubscriptionStockAsync(userId.toString(), str);
             await this.tgBot.sendMessage(userId, '取消訂閱成功');
-
         } catch (error) {
             this.logger.error(error);
             await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
@@ -359,10 +362,10 @@ export class TgBotService {
     }
 
     async handleUpdate(ctx: Context) {
-            if (ctx.message == null) return;
+        if (ctx.message == null) return;
 
-            const message = ctx.message as Message.TextMessage;
-            await this.handleCommand(message);
+        const message = ctx.message as Message.TextMessage;
+        await this.handleCommand(message);
     }
 
     private async handleCommand(message: Message.TextMessage) {

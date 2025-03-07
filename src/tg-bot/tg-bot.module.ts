@@ -28,5 +28,6 @@ import { RepositoryModule } from 'src/repository/repository.module';
   ],
   providers: [TgBotService],
   controllers: [TgBotController],
+  exports: [TgBotService]
 })
 export class TgBotModule { }
