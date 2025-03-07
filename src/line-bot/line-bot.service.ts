@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as line from '@line/bot-sdk';
 import { FlexBubble, FlexMessage, Message, PushMessageRequest, ReplyMessageRequest } from '@line/bot-sdk/dist/messaging-api/api';
 import { WebhookEvent } from '@line/bot-sdk';
@@ -10,7 +10,7 @@ import { ImgurService } from '../imgur/imgur.service';
 
 @Injectable()
 export class LineBotService {
-
+  private readonly logger = new Logger(LineBotService.name);
   constructor(
     @Inject('LINE_CLIENT')
     private readonly lineClient: line.messagingApi.MessagingApiClient,

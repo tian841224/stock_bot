@@ -44,6 +44,7 @@ export class SubscriptionStockService {
     try {
       return await this.repository.update(id, updateSubscriptionStockDto);;
     } catch (e) {
+      this.logger.error(e);
       throw e;
     }
   }
