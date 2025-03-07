@@ -108,7 +108,10 @@ export class RepositoryService {
             const createSubscriptionStockDto = new CreateSubscriptionStockDto();
             createSubscriptionStockDto.subscriptionId = userSubscription.id;
             createSubscriptionStockDto.stock = stock;
-            await this.subscriptionStockService.create(createSubscriptionStockDto);
+            const result = await this.subscriptionStockService.create(createSubscriptionStockDto);
+            if(!result) {
+                return false;
+            }
             this.logger.log(`addUserSubscriptionStockAsync:新增使用者訂閱股票, userId: ${userId}`);
             return true;
         } catch (e) {

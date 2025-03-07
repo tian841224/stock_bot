@@ -14,6 +14,7 @@ import { RepositoryModule } from './repository/repository.module';
 import { UserModule } from './repository/user/user.module';
 import { SubscriptionModule } from './repository/subscription/subscription.module';
 import { SubscriptionStockModule } from './repository/subscription-stock/subscription-stock.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { SubscriptionStockModule } from './repository/subscription-stock/subscri
     SubscriptionModule,
     SubscriptionStockModule,
     NotificationHistoryModule,
+    SchedulerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
