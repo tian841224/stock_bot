@@ -34,7 +34,7 @@ export class TwStockInfoService {
             const response = await axios.get<TWSEApiResponse>(url);
 
             if (response.data.data && Array.isArray(response.data.data)) {
-                if (count == null) count = 1;
+                count = (!count || isNaN(count)) ? 1 : count;
                 response.data.data = response.data.data.slice(-count);
             }
 
