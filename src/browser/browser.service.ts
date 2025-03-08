@@ -14,7 +14,10 @@ export class BrowserService {
   // }
 
   async GetPage(): Promise<Page> {
-    if (this.browser == null || this.page == null) {
+    if (this.browser != null) {
+      this.logger.log(`browser.connected:${this.browser.connected}`);
+    }
+    if (this.browser == null || !this.browser.connected || this.page == null || this.page.isClosed()) {
       await this.createPage();
     }
 
@@ -30,10 +33,10 @@ export class BrowserService {
 
   private async createBrowser() {
     try {
-      if (this.browser == null) {
+      if (this.browser == null || !this.browser.connected) {
         const options: LaunchOptions = {
           headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox']
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
         };
 
         // 只在 Docker 環境中設定 executablePath
@@ -41,7 +44,6 @@ export class BrowserService {
         if (process.env.DOCKER_ENV === 'true') {
           options.executablePath = '/usr/bin/chromium-browser';
         }
-
         this.browser = await puppeteer.launch(options);
 
         if (this.browser == null) throw new Error('Browser建立失敗');
@@ -56,8 +58,8 @@ export class BrowserService {
 
   private async createPage() {
     try {
-      if (this.browser == null) await this.createBrowser();
-      if (this.page == null) {
+      if (this.browser == null || !this.browser.connected) await this.createBrowser();
+      if (this.page == null || this.page.isClosed()) {
         this.page = await this.browser.newPage();
         await this.page.setViewport({ width: 1920, height: 1080 });
 
