@@ -31,7 +31,7 @@ export class RepositoryService {
     }
 
     async getUserSubscriptionStockListAsync(userId: string): Promise<SubscriptionStock[]> {
-        const subscription = await this.subscriptionService.getIdByUserIdAndItem(userId, SubscriptionItem.StockInfo);
+        const subscription = await this.subscriptionService.findByUserIdAndItem(userId, SubscriptionItem.StockInfo);
         if (!subscription) {
             return [];
         }
@@ -39,7 +39,7 @@ export class RepositoryService {
     }
 
     async findUserSubscriptionStockAsync(userId: string, stock: string): Promise<SubscriptionStock> {
-        const subscription = await this.subscriptionService.getIdByUserIdAndItem(userId, SubscriptionItem.StockInfo);
+        const subscription = await this.subscriptionService.findByUserIdAndItem(userId, SubscriptionItem.StockInfo);
         const subscriptionStock = await this.subscriptionStockService.findBySubscriptionIdAndStock(subscription.id, stock);
         if (!subscriptionStock) {
             return;
