@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer, { Browser, LaunchOptions, Page } from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
@@ -31,12 +31,18 @@ export class BrowserService {
   private async createBrowser() {
     try {
       if (this.browser == null) {
-        this.browser = await puppeteer.launch({
-          // 使用docker時，需要設定此參數
-          // executablePath: '/usr/bin/chromium-browser',
+        const options: LaunchOptions = {
           headless: true,
           args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+        };
+
+        // 只在 Docker 環境中設定 executablePath
+        this.logger.log(`DOCKER_ENV:${process.env.DOCKER_ENV}`);
+        if (process.env.DOCKER_ENV === 'true') {
+          options.executablePath = '/usr/bin/chromium-browser';
+        }
+
+        this.browser = await puppeteer.launch(options);
 
         if (this.browser == null) throw new Error('Browser建立失敗');
         this.logger.log('Browser建立成功');

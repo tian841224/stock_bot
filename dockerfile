@@ -25,7 +25,8 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 # 設定環境變數
-ENV CHROME_BIN=/usr/bin/chromium-browser \
+ENV DOCKER_ENV=true \
+    CHROME_BIN=/usr/bin/chromium-browser \
     CHROME_PATH=/usr/lib/chromium/ 
 
 # 只複製必要檔案
