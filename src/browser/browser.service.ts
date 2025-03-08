@@ -1,75 +1,134 @@
 import { Injectable, Logger } from '@nestjs/common';
-import puppeteer, { Browser, LaunchOptions, Page } from 'puppeteer';
+import puppeteer, { Browser, Page, LaunchOptions } from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
   private readonly logger = new Logger(BrowserService.name);
+  private browser: Browser | null = null;
+  private page: Page | null = null;
+  private initializing = false;
 
-  private browser: Browser;
-  private page: Page;
-
-  // constructor() { 
-  //   this.createBrowser();
-  //   this.createPage();
-  // }
-
-  async GetPage(): Promise<Page> {
-    if (this.browser != null) {
-      this.logger.log(`browser.connected:${this.browser.connected}`);
-    }
-    if (this.browser == null || !this.browser.connected || this.page == null || this.page.isClosed()) {
-      await this.createPage();
+  async getPage(): Promise<Page> {
+    if (this.initializing) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return this.getPage();
     }
 
-    return this.page;
+    if (!this.browser?.connected || !this.page || this.page.isClosed()) {
+      await this.initialize();
+    }
+
+    return this.page!;
   }
 
-  async disposeBrowser() {
-    await this.page?.close();
-    this.logger.log('釋放Page');
-    await this.browser?.close();
-    this.logger.log('釋放Browser');
-  }
-
-  private async createBrowser() {
+  async dispose(): Promise<void> {
     try {
-      if (this.browser == null || !this.browser.connected) {
-        const options: LaunchOptions = {
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        };
-
-        // 只在 Docker 環境中設定 executablePath
-        this.logger.log(`DOCKER_ENV:${process.env.DOCKER_ENV}`);
-        if (process.env.DOCKER_ENV === 'true') {
-          options.executablePath = '/usr/bin/chromium-browser';
-        }
-        this.browser = await puppeteer.launch(options);
-
-        if (this.browser == null) throw new Error('Browser建立失敗');
-        this.logger.log('Browser建立成功');
+      if (this.page && !this.page.isClosed()) {
+        await this.page.close();
+        this.logger.log('Page已關閉');
       }
-
+      if (this.browser?.connected) {
+        await this.browser.close();
+        this.logger.log('Browser已關閉');
+      }
     } catch (error) {
-      await this.browser?.close();
-      throw error;
+      this.logger.error('釋放資源時發生錯誤', error);
     }
   }
 
-  private async createPage() {
+  private async initialize(): Promise<void> {
+    this.initializing = true;
     try {
-      if (this.browser == null || !this.browser.connected) await this.createBrowser();
-      if (this.page == null || this.page.isClosed()) {
-        this.page = await this.browser.newPage();
-        await this.page.setViewport({ width: 1920, height: 1080 });
-
-        if (this.page == null) throw new Error('Page建立失敗');
-        this.logger.log('Page建立成功');
-      }
-
-    } catch (error: any) {
-      await this.page?.close();
-      throw error;
+      await this.ensureBrowser();
+      await this.ensurePage();
+    } catch (error) {
+      await this.dispose();
+      throw new Error(`初始化失敗: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      this.initializing = false;
     }
   }
+
+  private async ensureBrowser(): Promise<void> {
+    if (this.browser?.connected) return;
+
+    const options: LaunchOptions = {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      ...(process.env.DOCKER_ENV === 'true' && {
+        executablePath: '/usr/bin/chromium-browser',
+      }),
+    };
+
+    this.browser = await puppeteer.launch(options);
+    this.setupBrowserEventListeners(); // 添加事件監聽
+    this.logger.log('Browser初始化成功');
+  }
+
+  private async ensurePage(): Promise<void> {
+    if (this.page && !this.page.isClosed()) return;
+
+    if (!this.browser?.connected) {
+      throw new Error('Browser未連接');
+    }
+
+    this.page = await this.browser.newPage();
+    await this.page.setViewport({ width: 1920, height: 1080 });
+    // this.setupPageEventListeners(); // 添加頁面事件監聽
+    this.logger.log('Page初始化成功');
+  }
+
+  private setupBrowserEventListeners(): void {
+    if (!this.browser) return;
+
+    // 當瀏覽器斷開連接時
+    this.browser.on('disconnected', async () => {
+      this.logger.warn('Browser已斷開連接');
+      await this.dispose();
+      // await this.initialize();
+    });
+
+    // // 當有新的目標（tab/page）創建時
+    // this.browser.on('targetcreated', (target) => {
+    //   this.logger.debug(`新目標創建: ${target.url()}`);
+    // });
+
+    // // 當目標被銷毀時
+    // this.browser.on('targetdestroyed', (target) => {
+    //   this.logger.debug(`目標被銷毀: ${target.url()}`);
+    // });
+  }
+
+  // private setupPageEventListeners(): void {
+  //   if (!this.page) return;
+
+  //   // 頁面錯誤
+  //   this.page.on('error', (error) => {
+  //     this.logger.error('頁面崩潰', error);
+  //   });
+
+  //   // 控制台訊息
+  //   this.page.on('console', (msg) => {
+  //     const type = msg.type();
+  //     const text = msg.text();
+  //     if (type === 'error') {
+  //       this.logger.error(`頁面控制台錯誤: ${text}`);
+  //     } else if (type === 'warn') {
+  //       this.logger.warn(`頁面控制台警告: ${text}`);
+  //     } else {
+  //       this.logger.debug(`頁面控制台訊息[${type}]: ${text}`);
+  //     }
+  //   });
+
+  //   // 請求失敗
+  //   this.page.on('requestfailed', (request) => {
+  //     this.logger.warn(`請求失敗: ${request.url()} - ${request.failure()?.errorText}`);
+  //   });
+
+  //   // 頁面關閉時
+  //   this.page.on('close', () => {
+  //     this.logger.log('頁面已關閉');
+  //     this.page = null;
+  //   });
+  // }
 }

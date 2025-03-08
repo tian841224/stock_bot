@@ -192,7 +192,7 @@ export class TwStockInfoService {
     // 取得K線圖表
     async getKlineAsync(symbol: string, input: string = '日K'): Promise<KlineResponseDto> {
         try {
-            const page = await this.browserService.GetPage();
+            const page = await this.browserService.getPage();
             // 載入網頁
             const url = this.cnyesUrl + symbol;
             this.logger.log(url, '載入網頁');
@@ -243,7 +243,7 @@ export class TwStockInfoService {
         }
         catch (error) {
             this.logger.error(error, 'getKlineAsync');
-            this.browserService.disposeBrowser();
+            this.browserService.dispose();
             throw error;
         }
     }
@@ -251,7 +251,7 @@ export class TwStockInfoService {
     // 取得詳細圖表
     async getDetailPriceAsync(symbol: string): Promise<DetailPriceResponseDto> {
         try {
-            const page = await this.browserService.GetPage();
+            const page = await this.browserService.getPage();
 
             // 載入網頁
             this.logger.log('載入網頁');
@@ -336,7 +336,7 @@ export class TwStockInfoService {
         }
         catch (error) {
             this.logger.error(error, 'getDetailPriceAsync');
-            this.browserService.disposeBrowser();
+            this.browserService.dispose();
             throw error;
         }
     }
@@ -344,7 +344,7 @@ export class TwStockInfoService {
     // 取得股票機校
     async getPerformanceAsync(symbol: string): Promise<PerformanceResponseDto> {
         try {
-            const page = await this.browserService.GetPage();
+            const page = await this.browserService.getPage();
 
             // 載入網頁
             this.logger.log(`載入網頁:${this.cnyesUrl + symbol}`);
@@ -399,14 +399,14 @@ export class TwStockInfoService {
             return result;
         } catch (error) {
             this.logger.error(error, 'getDetailPriceAsync');
-            this.browserService.disposeBrowser();
+            this.browserService.dispose();
             throw error;
         }
     }
 
     async getNewsAsync(symbol: string): Promise<NewsResponseDto> {
         try {
-            const page = await this.browserService.GetPage();
+            const page = await this.browserService.getPage();
 
             // 載入網頁
             await page.goto(this.cnyesUrl + symbol);
@@ -444,7 +444,7 @@ export class TwStockInfoService {
 
         } catch (error) {
             this.logger.error(error, 'getNewsAsync');
-            this.browserService.disposeBrowser();
+            this.browserService.dispose();
             throw error;
         }
     }
