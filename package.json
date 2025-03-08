@@ -1,8 +1,8 @@
 {
-  "name": "tgbot_us_stock",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "stock-bot",
+  "version": "v20250308",
+  "description": "此機器人為支援Line及TG Bot查詢台美股票相關資訊的機器人",
+  "author": "Tian",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -27,6 +27,7 @@
     "@nestjs/core": "^10.4.15",
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/schedule": "^5.0.1",
     "@nestjs/swagger": "^8.1.1",
     "@nestjs/typeorm": "^11.0.0",
     "axios": "^1.7.9",

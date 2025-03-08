@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { TgBotService } from '../tg-bot/tg-bot.service';
-import { Cron } from '@nestjs/schedule/dist/decorators/cron.decorator';
 import { RepositoryService } from '../repository/repository.service';
 import { SubscriptionService } from '../repository/subscription/subscription.service';
 import { SubscriptionItem } from '../model/enum/subscription-item.enum';
+import { Logger } from '@nestjs/common/services/logger.service';
+import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
+import { Cron } from '@nestjs/schedule/dist/decorators/cron.decorator';
 
 @Injectable()
 export class SchedulerService {
