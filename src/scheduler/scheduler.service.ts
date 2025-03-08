@@ -14,8 +14,7 @@ export class SchedulerService {
         private readonly subscriptionService: SubscriptionService,
     ) { }
 
-    // @Cron(process.env.CRON_SCHEDULE || '0 0 15 * * 1-5')
-    @Cron('*/1 * * * *')
+    @Cron(process.env.CRON_SCHEDULE || '0 0 15 * * 1-5')
     private async scheduleStockInfoPush() {
         try {
             this.logger.log('定時任務啟動');
