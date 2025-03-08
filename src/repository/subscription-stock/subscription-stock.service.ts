@@ -16,6 +16,10 @@ export class SubscriptionStockService {
 
   async create(createSubscriptionStockDto: CreateSubscriptionStockDto): Promise<boolean> {
     try {
+      const exist = await this.findBySubscriptionIdAndStock(createSubscriptionStockDto.subscriptionId, createSubscriptionStockDto.stock);
+      if(exist) {
+        return false;
+      }
       await this.repository.save(createSubscriptionStockDto);
       return true;
     } catch (e) {
@@ -40,10 +44,15 @@ export class SubscriptionStockService {
     return await this.repository.findOneBy({ subscription: { id: subscriptionId }, stock: stock });
   }
 
+  async findByUserIdAndStock(userId: string, stock: string): Promise<SubscriptionStock> {
+    return await this.repository.findOneBy({ subscription: { userId: userId }, stock: stock });
+  }
+
   async update(id: number, updateSubscriptionStockDto: UpdateSubscriptionStockDto): Promise<UpdateResult> {
     try {
       return await this.repository.update(id, updateSubscriptionStockDto);;
     } catch (e) {
+      this.logger.error(e);
       throw e;
     }
   }

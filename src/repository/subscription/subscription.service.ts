@@ -15,13 +15,13 @@ export class SubscriptionService {
     private repository: Repository<Subscription>,
   ) { }
 
-  async create(createSubscriptionDto: CreateSubscriptionDto): Promise<boolean>{
+  async create(createSubscriptionDto: CreateSubscriptionDto): Promise<boolean> {
     try {
       await this.repository.save(createSubscriptionDto);
       return true;
     } catch (e) {
       this.logger.error(e);
-       throw e;
+      throw e;
     }
   }
 
@@ -37,12 +37,12 @@ export class SubscriptionService {
     return await this.repository.findBy({ userId });
   }
 
-  async findByUserIdAndItem(userId: string, item: SubscriptionItem): Promise<Subscription> {
-    return await this.repository.findOneBy({ userId, item });
+  async findByItem(item: SubscriptionItem): Promise<Subscription[]> {
+    return await this.repository.findBy({ item: item });
   }
 
-  async getIdByUserIdAndItem(userId: string, item: SubscriptionItem): Promise<Subscription> {
-    return (await this.repository.findOneBy({ userId, item }));
+  async findByUserIdAndItem(userId: string, item: SubscriptionItem): Promise<Subscription> {
+    return await this.repository.findOneBy({ userId, item });
   }
 
   async update(id: number, updateSubscriptionDto: UpdateSubscriptionDto) {

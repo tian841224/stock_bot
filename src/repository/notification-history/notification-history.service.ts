@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateNotificationHistoryDto } from './dto/create-notification-history.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,6 +6,7 @@ import { NotificationHistory } from 'src/model/entity/notification-history.entit
 
 @Injectable()
 export class NotificationHistoryService {
+  private readonly logger = new Logger(NotificationHistoryService.name);
 
     constructor(
       @InjectRepository(NotificationHistory)
@@ -17,8 +18,8 @@ export class NotificationHistoryService {
         await this.repository.save(createNotificationHistoryDto);
         return true;
       } catch (e) {
-        console.error(e);
-        return false;
+        this.logger.error(e);
+        throw e;
       }
     }
 

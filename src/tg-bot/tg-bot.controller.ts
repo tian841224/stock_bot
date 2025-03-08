@@ -24,14 +24,7 @@ export class TgBotController {
             return res.sendStatus(403);
         }
 
-        try {
-            await this.tgBotService.handleUpdate(req.body);
-
-            res.sendStatus(200);
-        } catch (error) {
-            console.error('Error processing update:', error);
-            await this.browserService.disposeBrowser();
-            res.sendStatus(500);
-        }
+        await this.tgBotService.handleUpdate(req.body);
+        res.sendStatus(200);
     }
 }

@@ -31,7 +31,7 @@ export class RepositoryService {
     }
 
     async getUserSubscriptionStockListAsync(userId: string): Promise<SubscriptionStock[]> {
-        const subscription = await this.subscriptionService.getIdByUserIdAndItem(userId, SubscriptionItem.StockInfo);
+        const subscription = await this.subscriptionService.findByUserIdAndItem(userId, SubscriptionItem.StockInfo);
         if (!subscription) {
             return [];
         }
@@ -39,7 +39,7 @@ export class RepositoryService {
     }
 
     async findUserSubscriptionStockAsync(userId: string, stock: string): Promise<SubscriptionStock> {
-        const subscription = await this.subscriptionService.getIdByUserIdAndItem(userId, SubscriptionItem.StockInfo);
+        const subscription = await this.subscriptionService.findByUserIdAndItem(userId, SubscriptionItem.StockInfo);
         const subscriptionStock = await this.subscriptionStockService.findBySubscriptionIdAndStock(subscription.id, stock);
         if (!subscriptionStock) {
             return;
@@ -108,7 +108,10 @@ export class RepositoryService {
             const createSubscriptionStockDto = new CreateSubscriptionStockDto();
             createSubscriptionStockDto.subscriptionId = userSubscription.id;
             createSubscriptionStockDto.stock = stock;
-            await this.subscriptionStockService.create(createSubscriptionStockDto);
+            const result = await this.subscriptionStockService.create(createSubscriptionStockDto);
+            if(!result) {
+                return false;
+            }
             this.logger.log(`addUserSubscriptionStockAsync:新增使用者訂閱股票, userId: ${userId}`);
             return true;
         } catch (e) {

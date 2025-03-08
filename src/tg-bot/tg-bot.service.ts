@@ -18,7 +18,7 @@ export class TgBotService {
         this.tgBot = this.bot.telegram;
     }
 
-    private async start(message: Message.TextMessage) {
+    private async start(userId: number) {
         const text = `台股機器人指令指南🤖
 
 📊 基本K線圖
@@ -54,14 +54,14 @@ export class TgBotService {
 - /sub i - 訂閱 當日個股資訊
 (取消訂閱 unsub + 代號)`;
 
-        await this.tgBot.sendMessage(message.chat.id, text);
+        await this.tgBot.sendMessage(userId, text);
     }
 
-    private async getKlineAsync(message: Message.TextMessage, symbol: string, timeRange?: string) {
+    private async getKlineAsync(userId: number, symbol: string, timeRange?: string) {
         try {
             if (symbol == null) {
                 this.logger.log(`getKlineAsync:未輸入股票代號`);
-                await this.tgBot.sendMessage(message.chat.id, '請輸入股票代號');
+                await this.tgBot.sendMessage(userId, '請輸入股票代號');
                 return;
             }
 
@@ -69,7 +69,7 @@ export class TgBotService {
             const imageBuffer = Buffer.from(result.image);
 
             await this.tgBot.sendPhoto(
-                message.chat.id,
+                userId,
                 { source: imageBuffer },
                 {
                     caption: `${result.stockName}(${symbol}) K線圖　💹`,
@@ -78,16 +78,16 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getKlineAsync');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
-    private async getPerformanceAsync(message: Message.TextMessage, symbol: string) {
+    private async getPerformanceAsync(userId: number, symbol: string) {
 
         try {
             if (symbol == null) {
                 this.logger.log(`getPerformanceAsync:未輸入股票代號`);
-                await this.tgBot.sendMessage(message.chat.id, '請輸入股票代號');
+                await this.tgBot.sendMessage(userId, '請輸入股票代號');
                 return;
             }
 
@@ -95,7 +95,7 @@ export class TgBotService {
             const imageBuffer = Buffer.from(result.image);
 
             await this.tgBot.sendPhoto(
-                message.chat.id,
+                userId,
                 { source: imageBuffer },
                 {
                     caption: `${result.stockName}(${symbol}) 績效表現　✨`,
@@ -104,16 +104,15 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getPerformanceAsync');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
-
     }
 
-    private async getDetailPriceAsync(message: Message.TextMessage, symbol: string) {
+    private async getDetailPriceAsync(userId: number, symbol: string) {
         try {
             if (symbol == null) {
                 this.logger.log(`getDetailPriceAsync:未輸入股票代號`);
-                await this.tgBot.sendMessage(message.chat.id, '請輸入股票代號');
+                await this.tgBot.sendMessage(userId, '請輸入股票代號');
                 return;
             }
 
@@ -121,7 +120,7 @@ export class TgBotService {
             const imageBuffer = Buffer.from(result.image);
 
             await this.tgBot.sendPhoto(
-                message.chat.id,
+                userId,
                 { source: imageBuffer },
                 {
                     caption: `${result.stockName}(${symbol})-股票詳細資訊　📝`,
@@ -130,15 +129,15 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getDetailPriceAsync');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
-    private async getNewsAsync(message: Message.TextMessage, symbol: string) {
+    private async getNewsAsync(userId: number, symbol: string) {
         try {
             if (symbol == null) {
                 this.logger.log(`getNewsAsync:未輸入股票代號`);
-                await this.tgBot.sendMessage(message.chat.id, '請輸入股票代號');
+                await this.tgBot.sendMessage(userId, '請輸入股票代號');
                 return;
             }
 
@@ -151,7 +150,7 @@ export class TgBotService {
 
             // 發送新聞訊息
             await this.tgBot.sendMessage(
-                message.chat.id,
+                userId,
                 `⚡️${result.stockName}(${symbol})-即時新聞`,
                 {
                     reply_markup: {
@@ -161,15 +160,15 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getNewsAsync');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
-    private async getYahooNewsAsync(message: Message.TextMessage, symbol: string) {
+    async getYahooNewsAsync(userId: number, symbol: string) {
         try {
             if (symbol == null) {
                 this.logger.log(`getYahooNewsAsync:未輸入股票代號`);
-                await this.tgBot.sendMessage(message.chat.id, '請輸入股票代號');
+                await this.tgBot.sendMessage(userId, '請輸入股票代號');
                 return;
             }
 
@@ -182,7 +181,7 @@ export class TgBotService {
 
             // 發送新聞訊息
             await this.tgBot.sendMessage(
-                message.chat.id,
+                userId,
                 `⚡️${symbol}-即時新聞`,
                 {
                     reply_markup: {
@@ -192,27 +191,24 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getYahooNewsAsync');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
-    private async getDailyMarketInfoAsync(message: Message.TextMessage, num: string) {
+    async getDailyMarketInfoAsync(userId: number, num: number) {
 
         try {
             let count = 1;
             if (num != null) {
 
-                count = parseInt(num);
-                if (isNaN(count)) {
-                    await this.tgBot.sendMessage(message.chat.id, '請輸入數字');
-                    return;
-                }
+                count = num;
+
             }
 
             let result = await this.twStockInfoService.getDailyMarketInfoAsync(count);
-            if(result == null) {
+            if (result == null) {
                 this.logger.log(`getDailyMarketInfoAsync:查無資料`);
-                await this.tgBot.sendMessage(message.chat.id, '查無資料,請確認後再試');
+                await this.tgBot.sendMessage(userId, '查無資料,請確認後再試');
                 return;
             }
             let messageText = '<b>台灣股市大盤資訊</b>\n\n';
@@ -226,20 +222,20 @@ export class TgBotService {
                 messageText += `漲跌點數：${row.change}\n`;
                 messageText += `</code>\n`;
             }
-            await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
+            await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getDailyMarketInfoAsync');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
-    private async getTopVolumeItemsAsync(message: Message.TextMessage) {
+    async getTopVolumeItemsAsync(userId: number) {
 
         try {
             let result = await this.twStockInfoService.getTopVolumeItemsAsync();
-            if(result == null) {
+            if (result == null) {
                 this.logger.log(`getTopVolumeItemsAsync:查無資料`);
-                await this.tgBot.sendMessage(message.chat.id, '查無資料,請確認後再試');
+                await this.tgBot.sendMessage(userId, '查無資料,請確認後再試');
                 return;
             }
             let messageText = '🔝<b>今日交易量前二十</b>\n\n';
@@ -257,26 +253,26 @@ export class TgBotService {
                 messageText += `</code>\n`;
             }
 
-            await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
+            await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getTopVolumeItemsAsync');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
-    private async getAfterTradingVolumeAsync(message: Message.TextMessage, symbol: string) {
+    async getAfterTradingVolumeAsync(userId: number, symbol: string) {
 
         try {
             if (symbol == null) {
                 this.logger.log(`getAfterTradingVolumeAsync:未輸入股票代號`);
-                await this.tgBot.sendMessage(message.chat.id, '請輸入股票代號');
+                await this.tgBot.sendMessage(userId, '請輸入股票代號');
                 return;
             }
 
             let result = await this.twStockInfoService.getAfterTradingVolumeAsync(symbol);
-            if(result == null) {
+            if (result == null) {
                 this.logger.log(`getAfterTradingVolumeAsync:查無資料`);
-                await this.tgBot.sendMessage(message.chat.id, '查無資料,請確認後再試');
+                await this.tgBot.sendMessage(userId, '查無資料,請確認後再試');
                 return;
             }
 
@@ -294,79 +290,74 @@ export class TgBotService {
             messageText += `最低價：${result.lowPrice}\n`;
             messageText += `</code>`;
 
-            await this.tgBot.sendMessage(message.chat.id, messageText, { parse_mode: 'HTML' });
+            await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getAfterTradingVolumeAsync');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
     // 新增使用者訂閱項目
-    private async addUserSubscriptionAsync(message: Message.TextMessage, item: string) {
+    private async addUserSubscriptionAsync(userId: number, item: string) {
         try {
-            const userId = message.chat.id.toString();
             const subscription: number = Number(item);
 
-            await this.repositoryService.addUserSubscriptionItemAsync(userId, subscription);
-            await this.tgBot.sendMessage(message.chat.id, '訂閱成功');
+            await this.repositoryService.addUserSubscriptionItemAsync(userId.toString(), subscription);
+            await this.tgBot.sendMessage(userId, '訂閱成功');
         } catch (error) {
             this.logger.error(error, 'addUserSubscription');
-            await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
     // 更新使用者訂閱項目
-    private async updateUserSubscriptionAsync(message: Message.TextMessage, item: string, status: number) {
+    private async updateUserSubscriptionAsync(userId: number, item: string, status: number) {
         try {
-            const userId = message.chat.id.toString();
             const subscription: number = Number(item);
 
             // 取得使用者訂閱項目
-            const userSubItem = await this.repositoryService.getUserSubscriptionByItemAsync(userId, subscription);
+            const userSubItem = await this.repositoryService.getUserSubscriptionByItemAsync(userId.toString(), subscription);
             if (userSubItem === null) {
-                await this.addUserSubscriptionAsync(message, item);
+                await this.addUserSubscriptionAsync(userId, item);
                 return;
             }
 
-            await this.repositoryService.updateUserSubscriptionItemAsync(userId, subscription, status);
+            await this.repositoryService.updateUserSubscriptionItemAsync(userId.toString(), subscription, status);
 
             if (status === 0) {
-                await this.tgBot.sendMessage(message.chat.id, '取消訂閱成功');
+                await this.tgBot.sendMessage(userId, '取消訂閱成功');
             } else {
-                await this.tgBot.sendMessage(message.chat.id, '訂閱成功');
+                await this.tgBot.sendMessage(userId, '訂閱成功');
             }
 
         } catch (error) {
             this.logger.error(error, 'updateUserSubscription');
-            await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
-    private async addSubscriptionStockAsync(message: Message.TextMessage, str: string) {
+    private async addSubscriptionStockAsync(userId: number, str: string) {
         try {
-            const userId = message.chat.id.toString();
-            await this.repositoryService.addUserSubscriptionStockAsync(userId, str);
-            await this.tgBot.sendMessage(message.chat.id, '訂閱成功');
+            const result = await this.repositoryService.addUserSubscriptionStockAsync(userId.toString(), str);
+            if(result === false) {
+                await this.tgBot.sendMessage(userId, '已訂閱過此股票');
+                return;
+            }
+            await this.tgBot.sendMessage(userId, '訂閱成功');
 
         } catch (error) {
             this.logger.error(error);
-            await this.tgBot.sendMessage(message.chat.id, '訂閱失敗');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
-    private async deleteSubscriptionStockAsync(message: Message.TextMessage, str: string) {
+    private async deleteSubscriptionStockAsync(userId: number, str: string) {
         try {
-            const userId = message.chat.id.toString();
-            await this.repositoryService.deleteUserSubscriptionStockAsync(userId, str);
-            await this.tgBot.sendMessage(message.chat.id, '取消訂閱成功');
-
+            await this.repositoryService.deleteUserSubscriptionStockAsync(userId.toString(), str);
+            await this.tgBot.sendMessage(userId, '取消訂閱成功');
         } catch (error) {
             this.logger.error(error);
-            await this.tgBot.sendMessage(message.chat.id, '取消訂閱失敗');
-            throw error;
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
         }
     }
 
@@ -374,54 +365,64 @@ export class TgBotService {
         if (ctx.message == null) return;
 
         const message = ctx.message as Message.TextMessage;
-        this.handleCommand(message);
+        await this.handleCommand(message);
     }
 
     private async handleCommand(message: Message.TextMessage) {
         const messageText = message.text;
+        const userId = message.chat.id;
         const command1 = messageText.split(' ')[1];
 
         switch (messageText.split(' ')[0]) {
             case '/start':
-                this.start(message);
+                this.start(userId);
                 break;
             case '/k':
-                await this.getKlineAsync(message, command1);
+                await this.getKlineAsync(userId, command1);
                 break;
             case '/p':
-                await this.getPerformanceAsync(message, command1);
+                await this.getPerformanceAsync(userId, command1);
                 break;
             case '/d':
-                await this.getDetailPriceAsync(message, command1);
+                await this.getDetailPriceAsync(userId, command1);
                 break;
             case '/n':
-                await this.getNewsAsync(message, command1);
+                await this.getNewsAsync(userId, command1);
                 break;
             case '/yn':
-                await this.getYahooNewsAsync(message, command1);
+                await this.getYahooNewsAsync(userId, command1);
                 break;
             case '/m':
-                await this.getDailyMarketInfoAsync(message, command1);
+                await this.getDailyMarketInfoAsync(userId, this.convartToNumber(command1));
                 break;
             case '/t':
-                await this.getTopVolumeItemsAsync(message);
+                await this.getTopVolumeItemsAsync(userId);
                 break;
             case '/i':
-                await this.getAfterTradingVolumeAsync(message, command1);
+                await this.getAfterTradingVolumeAsync(userId, command1);
                 break;
             case '/sub':
-                await this.updateUserSubscriptionAsync(message, command1, 1);
+                await this.updateUserSubscriptionAsync(userId, command1, 1);
                 break;
             case '/unsub':
-                await this.updateUserSubscriptionAsync(message, command1, 0);
+                await this.updateUserSubscriptionAsync(userId, command1, 0);
                 break;
             case '/add':
-                await this.addSubscriptionStockAsync(message, command1);
+                await this.addSubscriptionStockAsync(userId, command1);
                 break;
             case '/del':
-                await this.deleteSubscriptionStockAsync(message, command1);
+                await this.deleteSubscriptionStockAsync(userId, command1);
             default:
                 break;
         }
+    }
+
+    private convartToNumber(command: string): number {
+        const num = parseInt(command);
+
+        if (isNaN(num)) {
+            return;
+        }
+        return num;
     }
 }
