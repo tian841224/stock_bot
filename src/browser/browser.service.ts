@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import puppeteer, { Browser, Page } from 'puppeteer';
 
 @Injectable()
 export class BrowserService {
+  private readonly logger = new Logger(BrowserService.name);
+
   private browser: Browser;
   private page: Page;
 
@@ -11,19 +13,19 @@ export class BrowserService {
   //   this.createPage();
   // }
 
-  async GetPage():Promise<Page> {
-    if(this.browser == null || this.page == null){
+  async GetPage(): Promise<Page> {
+    if (this.browser == null || this.page == null) {
       await this.createPage();
     }
-    
+
     return this.page;
   }
 
   async disposeBrowser() {
     await this.page?.close();
-    console.log('釋放Page');
+    this.logger.log('釋放Page');
     await this.browser?.close();
-    console.log('釋放Browser');
+    this.logger.log('釋放Browser');
   }
 
   private async createBrowser() {
@@ -31,18 +33,18 @@ export class BrowserService {
       if (this.browser == null) {
         this.browser = await puppeteer.launch({
           // 使用docker時，需要設定此參數
-          executablePath: '/usr/bin/chromium-browser',
+          // executablePath: '/usr/bin/chromium-browser',
           headless: true,
           args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
 
         if (this.browser == null) throw new Error('Browser建立失敗');
-        console.log('Browser建立成功');
+        this.logger.log('Browser建立成功');
       }
 
-    } catch (error: any) {
+    } catch (error) {
       await this.browser?.close();
-      throw new Error(`[createBrowser] : ${error.message}`);
+      throw error;
     }
   }
 
@@ -54,12 +56,12 @@ export class BrowserService {
         await this.page.setViewport({ width: 1920, height: 1080 });
 
         if (this.page == null) throw new Error('Page建立失敗');
-        console.log('Page建立成功');
+        this.logger.log('Page建立成功');
       }
 
     } catch (error: any) {
       await this.page?.close();
-      throw new Error(`[createPage] : ${error.message}`);
+      throw error;
     }
   }
 }

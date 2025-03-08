@@ -1,10 +1,11 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common';
 import { LineBotService } from './line-bot.service';
 import { LineBotGuard } from './line-bot.guard';
 import { ApiExcludeEndpoint } from '@nestjs/swagger';
 
 @Controller('lineBot')
 export class LineBotController {
+  private readonly logger = new Logger(LineBotController.name);
   constructor(private readonly lineBotService: LineBotService) { }
 
   @Post('/callback')
@@ -22,8 +23,9 @@ export class LineBotController {
       await Promise.all(
         events.map(event => this.lineBotService.handleEvent(event))
       );
+      return;
     } catch (error) {
-      console.error(error);
+      this.logger.error(error);
       return;
     }
   }
