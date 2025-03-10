@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { SubscriptionStockService } from './subscription-stock.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { SubscriptionStock } from 'src/model/entity/subscription-stock.entity';
+import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SubscriptionStock])],
+  imports: [PrismaModule],
   providers: [SubscriptionStockService],
-  exports: [SubscriptionStockService]
+  exports: [SubscriptionStockService],
 })
 export class SubscriptionStockModule {}

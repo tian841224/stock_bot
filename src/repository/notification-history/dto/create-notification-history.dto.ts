@@ -1,14 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty, IsString } from "class-validator";
-import { SubscriptionItem } from "src/model/enum/subscription-item.enum";
+import { ApiProperty } from '@nestjs/swagger';
+import { SubscriptionItem } from '@prisma/client';
+import { IsEnum, IsNotEmpty } from 'class-validator';
 
 export class CreateNotificationHistoryDto {
-
-    @ApiProperty({ description: '訂閱項目' })
-    @IsEnum(SubscriptionItem)
-    @IsNotEmpty()
-    subscriptionItem: SubscriptionItem;
-
-    @ApiProperty({ description: '通知時間' })
-    createdAt: Date;
+  @ApiProperty({ description: '訂閱項目' })
+  @IsEnum(SubscriptionItem)
+  @IsNotEmpty()
+  subscriptionItem: SubscriptionItem;
 }

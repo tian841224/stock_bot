@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./stock_bot.db"
+}
+
+enum UserType {
+  DEFAULT @map("0")
+  TELEGRAM @map("1")
+  LINE @map("2")
+}
+
+enum SubscriptionItem {
+  DEFAULT @map("0")
+  STOCK_INFO @map("1")
+  STOCK_NEWS @map("2")
+  DAILY_MARKET_INFO @map("3")
+  TOP_VOLUME_ITEMS @map("4")
+}
+
+model User {
+  id                Int          @id @default(autoincrement())
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  status            Int          @default(1)
+  type              UserType     @default(DEFAULT)
+  userid            String       @unique
+  subscriptions     Subscription[]
+}
+
+model Subscription {
+  id                Int               @id @default(autoincrement())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  status            Int               @default(1)
+  userId            String            
+  item              SubscriptionItem  @default(DEFAULT)
+  user              User              @relation(fields: [userId], references: [userid])
+  subscriptionStocks SubscriptionStock[]
+  
+  @@unique([userId, item])
+}
+
+model SubscriptionStock {
+  id            Int          @id @default(autoincrement())
+  subscriptionId Int
+  stock         String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  status        Int          @default(1)
+  subscription  Subscription @relation(fields: [subscriptionId], references: [id])
+  
+  @@unique([subscriptionId, stock])
+}
+
+model NotificationHistory {
+  id              Int             @id @default(autoincrement())
+  subscriptionItem SubscriptionItem @default(DEFAULT)
+  createdAt       DateTime        @default(now())
+}

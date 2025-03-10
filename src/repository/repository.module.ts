@@ -6,8 +6,13 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { NotificationHistoryModule } from './notification-history/notification-history.module';
 
 @Module({
-  imports: [SubscriptionModule,SubscriptionStockModule,UserModule,NotificationHistoryModule],
+  imports: [
+    SubscriptionModule,
+    SubscriptionStockModule,
+    UserModule,
+    NotificationHistoryModule,
+  ],
   providers: [RepositoryService],
-  exports: [RepositoryService]
+  exports: [RepositoryService],
 })
 export class RepositoryModule {}
