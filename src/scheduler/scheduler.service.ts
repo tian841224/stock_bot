@@ -1,10 +1,10 @@
 import { TgBotService } from '../tg-bot/tg-bot.service';
 import { RepositoryService } from '../repository/repository.service';
 import { SubscriptionService } from '../repository/subscription/subscription.service';
-import { SubscriptionItem } from '../model/enum/subscription-item.enum';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
 import { Cron } from '@nestjs/schedule/dist/decorators/cron.decorator';
+import { SubscriptionItem } from '@prisma/client';
 
 @Injectable()
 export class SchedulerService {
@@ -52,16 +52,16 @@ export class SchedulerService {
         
         try {
             switch (item) {
-                case SubscriptionItem.DailyMarketInfo:
+                case SubscriptionItem.DAILY_MARKET_INFO:
                     await this.tgBotService.getDailyMarketInfoAsync(numericUserId, 1);
                     break;
 
-                case SubscriptionItem.StockInfo:
-                case SubscriptionItem.StockNews:
+                case SubscriptionItem.STOCK_INFO:
+                case SubscriptionItem.STOCK_NEWS:
                     const subscriptionStockList = await this.repositoryService.getUserSubscriptionStockListAsync(userId);
                     await Promise.all(
                         subscriptionStockList.map(async ({ stock }) => {
-                            if (item === SubscriptionItem.StockInfo) {
+                            if (item === SubscriptionItem.STOCK_INFO) {
                                 await this.tgBotService.getAfterTradingVolumeAsync(numericUserId, stock);
                             } else {
                                 await this.tgBotService.getYahooNewsAsync(numericUserId, stock);
@@ -70,7 +70,7 @@ export class SchedulerService {
                     );
                     break;
 
-                case SubscriptionItem.TopVolumeItems:
+                case SubscriptionItem.TOP_VOLUME_ITEMS:
                     await this.tgBotService.getTopVolumeItemsAsync(numericUserId);
                     break;
             }

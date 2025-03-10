@@ -1,26 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { SubscriptionStock } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSubscriptionStockDto } from './dto/create-subscription-stock.dto';
 import { UpdateSubscriptionStockDto } from './dto/update-subscription-stock.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { SubscriptionStock } from 'src/model/entity/subscription-stock.entity';
-import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 
 @Injectable()
 export class SubscriptionStockService {
   private readonly logger = new Logger(SubscriptionStockService.name);
 
   constructor(
-    @InjectRepository(SubscriptionStock)
-    private repository: Repository<SubscriptionStock>,
+    private prisma: PrismaService
   ) { }
 
   async create(createSubscriptionStockDto: CreateSubscriptionStockDto): Promise<boolean> {
     try {
-      const exist = await this.findBySubscriptionIdAndStock(createSubscriptionStockDto.subscriptionId, createSubscriptionStockDto.stock);
-      if(exist) {
+      const exist = await this.findBySubscriptionIdAndStock(createSubscriptionStockDto.subscriptionId, createSubscriptionStockDto.stock,);
+      if (exist) {
         return false;
       }
-      await this.repository.save(createSubscriptionStockDto);
+      await this.prisma.subscriptionStock.create({ data: createSubscriptionStockDto });
       return true;
     } catch (e) {
       this.logger.error(e);
@@ -29,37 +27,38 @@ export class SubscriptionStockService {
   }
 
   async findAll(): Promise<SubscriptionStock[]> {
-    return await this.repository.find();
+    return await this.prisma.subscriptionStock.findMany();
   }
 
   async findOne(id: number): Promise<SubscriptionStock> {
-    return await this.repository.findOneBy({ id });
+    return await this.prisma.subscriptionStock.findUnique({ where: { id } });
   }
 
   async findBySubscriptionId(subscriptionId: number): Promise<SubscriptionStock[]> {
-    return await this.repository.findBy({ subscription: { id: subscriptionId } });
+    return await this.prisma.subscriptionStock.findMany({ where: { id: subscriptionId } });
   }
 
   async findBySubscriptionIdAndStock(subscriptionId: number, stock: string): Promise<SubscriptionStock> {
-    return await this.repository.findOneBy({ subscription: { id: subscriptionId }, stock: stock });
+    return await this.prisma.subscriptionStock.findUnique({ where: { subscriptionId_stock: { subscriptionId, stock } } });
   }
 
-  async findByUserIdAndStock(userId: string, stock: string): Promise<SubscriptionStock> {
-    return await this.repository.findOneBy({ subscription: { userId: userId }, stock: stock });
+  async findByUserIdAndStock(userId: string, stock: string): Promise<SubscriptionStock | null> {
+    return await this.prisma.subscriptionStock.findFirst({ where: { stock: stock, subscription: { userId: userId, } } });
   }
 
-  async update(id: number, updateSubscriptionStockDto: UpdateSubscriptionStockDto): Promise<UpdateResult> {
+  async update(id: number, updateSubscriptionStockDto: UpdateSubscriptionStockDto) {
     try {
-      return await this.repository.update(id, updateSubscriptionStockDto);;
+      return await this.prisma.subscriptionStock.update({ where: { id }, data: updateSubscriptionStockDto });
     } catch (e) {
       this.logger.error(e);
       throw e;
     }
   }
 
-  async remove(id: number): Promise<DeleteResult> {
+  async remove(id: number): Promise<boolean> {
     try {
-      return await this.repository.delete(id);;
+      await this.prisma.subscriptionStock.delete({ where: { id } });
+      return true;
     } catch (e) {
       this.logger.error(e);
       throw e;
