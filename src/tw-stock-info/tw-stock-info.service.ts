@@ -15,6 +15,8 @@ export class TwStockInfoService {
     // private readonly yahooUrl = 'https://tw.stock.yahoo.com';
     // 鉅亨網網址
     private readonly cnyesUrl = 'https://www.cnyes.com/twstock/';
+
+
     constructor(
         private readonly browserService: BrowserService,
     ) { }
@@ -166,7 +168,7 @@ export class TwStockInfoService {
 
             //印出請求網址
             axios.interceptors.request.use(request => {
-                console.log('getTopVolumeItemsAsync URL:', `${request.url}`);
+                this.logger.log('getTopVolumeItemsAsync URL:', `${request.url}`);
                 return request;
             });
 
@@ -197,6 +199,7 @@ export class TwStockInfoService {
             const url = this.cnyesUrl + symbol;
             this.logger.log(url, '載入網頁');
             await page.goto(url);
+
             // 等待圖表載入
             this.logger.log('等待圖表載入');
             await page.waitForSelector('div.simple-chart table');
@@ -221,7 +224,10 @@ export class TwStockInfoService {
 
             // 等待網路請求完成
             this.logger.log('等待網路請求完成');
-            await page.waitForNetworkIdle();
+            await page.waitForNetworkIdle({
+                idleTime: 1000,  // 1秒內沒有新的網路請求
+                timeout: 30000   // 最多等待30秒
+            });
 
             // 等待圖表元素
             this.logger.log('等待圖表元素');
@@ -251,15 +257,15 @@ export class TwStockInfoService {
     // 取得詳細圖表
     async getDetailPriceAsync(symbol: string): Promise<DetailPriceResponseDto> {
         try {
+            interface InfoDictionary {
+                [key: number]: string;
+            }
+
             const page = await this.browserService.getPage();
 
             // 載入網頁
             this.logger.log('載入網頁');
             await page.goto(this.cnyesUrl + symbol);
-
-            interface InfoDictionary {
-                [key: number]: string;
-            }
 
             // 等待圖表載入
             this.logger.log('等待圖表載入');
@@ -320,7 +326,11 @@ export class TwStockInfoService {
 
             // 等待圖表載入
             this.logger.log('等待圖表載入');
-            await page.waitForNetworkIdle();
+            await page.waitForNetworkIdle({
+                idleTime: 1000,  // 1秒內沒有新的網路請求
+                timeout: 30000   // 最多等待30秒
+            });
+
             const chartElement = await page.waitForSelector('div.overview-top');
 
             const result: DetailPriceResponseDto = {
@@ -386,7 +396,10 @@ export class TwStockInfoService {
 
             // 等待網路請求完成
             this.logger.log('等待網路請求完成');
-            await page.waitForNetworkIdle();
+            await page.waitForNetworkIdle({
+                idleTime: 1000,  // 1秒內沒有新的網路請求
+                timeout: 30000   // 最多等待30秒
+            });
 
             this.logger.log('擷取網站中...');
             const screenshot = await priceElement.screenshot();
