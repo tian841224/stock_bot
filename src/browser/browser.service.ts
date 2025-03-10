@@ -7,6 +7,12 @@ export class BrowserService {
   private browser: Browser | null = null;
   private page: Page | null = null;
   private initializing = false;
+  // 定義要排除的請求模式
+  readonly ignoredPatterns = [
+    'player',
+    'advertisement',
+    'theme-footer-wrapper'
+  ];
 
   async getPage(): Promise<Page> {
     if (this.initializing) {
@@ -74,6 +80,23 @@ export class BrowserService {
 
     this.page = await this.browser.newPage();
     await this.page.setViewport({ width: 1920, height: 1080 });
+    
+     // 設定請求攔截
+     this.logger.log('設定請求攔截');
+     await this.page.setRequestInterception(true);
+     this.page.on('request', request => {
+       // 檢查是否包含任何要排除的模式
+       const shouldBlock = this.ignoredPatterns.some(pattern =>
+         request.url().includes(pattern)
+       );
+ 
+       if (shouldBlock) {
+         request.abort();
+       } else {
+         request.continue();
+       }
+     });
+
     // this.setupPageEventListeners(); // 添加頁面事件監聽
     this.logger.log('Page初始化成功');
   }
