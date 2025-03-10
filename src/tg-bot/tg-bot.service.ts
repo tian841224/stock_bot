@@ -4,11 +4,19 @@ import { TwStockInfoService } from '../tw-stock-info/tw-stock-info.service';
 import { Context, Telegraf, Telegram } from 'telegraf';
 import { Message } from 'telegraf/typings/core/types/typegram';
 import { RepositoryService } from 'src/repository/repository.service';
+import { SubscriptionItem, UserType } from '@prisma/client';
 
 @Injectable()
 export class TgBotService {
     private tgBot: Telegram
     private readonly logger = new Logger(TgBotService.name);
+    readonly subscriptionItemMap: Record<string, SubscriptionItem> = {
+        "0": SubscriptionItem.DEFAULT,
+        "1": SubscriptionItem.STOCK_INFO,
+        "2": SubscriptionItem.STOCK_NEWS,
+        "3": SubscriptionItem.DAILY_MARKET_INFO,
+        "4": SubscriptionItem.TOP_VOLUME_ITEMS
+    };
     constructor(
         @InjectBot()
         private bot: Telegraf<Context>,
@@ -78,7 +86,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getKlineAsync');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -104,7 +112,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getPerformanceAsync');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -129,7 +137,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getDetailPriceAsync');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -160,7 +168,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getNewsAsync');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -191,7 +199,7 @@ export class TgBotService {
             );
         } catch (error) {
             this.logger.error(error, 'getYahooNewsAsync');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -225,7 +233,7 @@ export class TgBotService {
             await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getDailyMarketInfoAsync');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -256,7 +264,7 @@ export class TgBotService {
             await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getTopVolumeItemsAsync');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -293,27 +301,41 @@ export class TgBotService {
             await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getAfterTradingVolumeAsync');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
     // 新增使用者訂閱項目
     private async addUserSubscriptionAsync(userId: number, item: string) {
         try {
-            const subscription: number = Number(item);
+            const subscription = this.parseSubscriptionItem(item);
+            if (!subscription) {
+                await this.tgBot.sendMessage(userId, `無效的訂閱項目: ${item}`);
+                return;
+            }
+
+            let user = await this.repositoryService.getUserAsync(userId.toString(), UserType.TELEGRAM);
+            if (user == null) {
+                await this.tgBot.sendMessage(userId, '無法取得使用者');
+                return;
+            }
 
             await this.repositoryService.addUserSubscriptionItemAsync(userId.toString(), subscription);
             await this.tgBot.sendMessage(userId, '訂閱成功');
         } catch (error) {
             this.logger.error(error, 'addUserSubscription');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
     // 更新使用者訂閱項目
     private async updateUserSubscriptionAsync(userId: number, item: string, status: number) {
         try {
-            const subscription: number = Number(item);
+            const subscription = this.parseSubscriptionItem(item);
+            if (!subscription) {
+                await this.tgBot.sendMessage(userId, `無效的訂閱項目: ${item}`);
+                return;
+            }
 
             // 取得使用者訂閱項目
             const userSubItem = await this.repositoryService.getUserSubscriptionByItemAsync(userId.toString(), subscription);
@@ -332,14 +354,20 @@ export class TgBotService {
 
         } catch (error) {
             this.logger.error(error, 'updateUserSubscription');
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
     private async addSubscriptionStockAsync(userId: number, str: string) {
         try {
+            let user = await this.repositoryService.getUserAsync(userId.toString(), UserType.TELEGRAM);
+            if (user == null) {
+                await this.tgBot.sendMessage(userId, '無法取得使用者');
+                return;
+            }
+
             const result = await this.repositoryService.addUserSubscriptionStockAsync(userId.toString(), str);
-            if(result === false) {
+            if (result === false) {
                 await this.tgBot.sendMessage(userId, '已訂閱過此股票');
                 return;
             }
@@ -347,7 +375,7 @@ export class TgBotService {
 
         } catch (error) {
             this.logger.error(error);
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -357,7 +385,7 @@ export class TgBotService {
             await this.tgBot.sendMessage(userId, '取消訂閱成功');
         } catch (error) {
             this.logger.error(error);
-            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者:${error}`);
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
 
@@ -425,4 +453,9 @@ export class TgBotService {
         }
         return num;
     }
+
+    private parseSubscriptionItem(input: string | number): SubscriptionItem | null {
+        const key = String(input);
+        return this.subscriptionItemMap[key] ?? null;
+      }
 }

@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { NotificationHistoryService } from './notification-history.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { NotificationHistory } from 'src/model/entity/notification-history.entity';
+import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([NotificationHistory])],
+  imports: [PrismaModule],
   providers: [NotificationHistoryService],
-  exports: [NotificationHistoryService]
+  exports: [NotificationHistoryService],
 })
 export class NotificationHistoryModule {}
