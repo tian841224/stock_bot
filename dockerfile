@@ -4,11 +4,13 @@ WORKDIR /app
 
 # 只複製依賴相關檔案
 COPY package*.json ./
+COPY prisma ./prisma/
 RUN npm ci --include=dev
 
 # 複製源碼並構建
 COPY . .
-RUN npm run build \
+RUN npx prisma generate \
+    npm run build \
     && rm -rf node_modules \
     && npm ci --omit=dev
 
