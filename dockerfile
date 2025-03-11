@@ -5,18 +5,19 @@ WORKDIR /app
 # 只複製依賴相關檔案
 COPY package*.json ./
 COPY prisma ./prisma/
+
 RUN npm ci --include=dev
 
 # 複製源碼並構建
 COPY . .
 RUN npx prisma generate \
-    npm run build \
+    && npm run build \
     && rm -rf node_modules \
     && npm ci --omit=dev
 
 # ========== 第二階段 (Runtime) ==========
 FROM alpine:3.19 AS runtime
-# 一次性安裝所有需要的套件，減少層數
+
 RUN apk add --no-cache \
     nodejs \
     chromium \
