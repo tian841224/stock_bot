@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as compression from 'compression';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -10,8 +11,8 @@ async function bootstrap() {
   });
   let port = process.env.PORT ?? 3000;
 
-  const environment = process.env.NODE_ENV || 'development';
-  console.log(`目前環境：${environment}`);
+  const environment = process.env.NODE_ENV;
+  Logger.log(`目前環境：${environment}`);
   
   // app.use(multer().any());
   app.use(compression());  // 啟用壓縮
@@ -29,7 +30,7 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`app listening at http://localhost:${port}`);
-  console.log(`swagger doc at http://localhost:${port}/swagger`);
+  Logger.log(`app listening at http://localhost:${port}`);
+  Logger.log(`swagger doc at http://localhost:${port}/swagger`);
 }
 bootstrap();

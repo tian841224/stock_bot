@@ -2,10 +2,15 @@ generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "sqlite"
-  url      = "file:./stock_bot.db"
+datasource postgresql {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+// datasource sqlite {
+//   provider = "sqlite"
+//   url      = "file:./stock_bot.db"
+// }
 
 enum UserType {
   DEFAULT @map("0")
