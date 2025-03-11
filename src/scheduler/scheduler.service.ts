@@ -5,26 +5,38 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
 import { Cron } from '@nestjs/schedule/dist/decorators/cron.decorator';
 import { SubscriptionItem } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateNotificationHistoryDto } from '../repository/notification-history/dto/create-notification-history.dto';
 
 @Injectable()
 export class SchedulerService {
     private readonly logger = new Logger(SchedulerService.name);
+
     constructor(
         private readonly repositoryService: RepositoryService,
         private readonly tgBotService: TgBotService,
         private readonly subscriptionService: SubscriptionService,
+        private prisma: PrismaService
     ) { }
 
     @Cron(process.env.CRON_SCHEDULE || '0 0 15 * * 1-5')
     private async scheduleStockInfoPush() {
         try {
             this.logger.log('定時任務啟動');
-            
+            let notificationHistory: CreateNotificationHistoryDto;
+
             // 遍歷所有訂閱項目
             const items = Object.values(SubscriptionItem) as SubscriptionItem[];
-            await Promise.all(items.map(item => this.handleSubscriptionItem(item)));
-            
+            await Promise.all(items.map(async item => {
+                await this.handleSubscriptionItem(item);
+                this.logger.log(`推送項目: ${item}`);
+                notificationHistory = { subscriptionItem: item };
+                return item;
+            }));
+
+            await this.prisma.notificationHistory.create({ data: notificationHistory });
             this.logger.log('定時任務結束');
+
         } catch (error) {
             this.logger.error(`定時任務執行失敗: ${error.message}`);
         }
@@ -34,7 +46,7 @@ export class SchedulerService {
         try {
             const subscriptionList = await this.subscriptionService.findByItem(item);
             const userIds = subscriptionList.map(subscription => subscription.userId);
-            
+
             if (userIds.length === 0) {
                 return;
             }
@@ -49,7 +61,7 @@ export class SchedulerService {
 
     private async processUserSubscription(userId: string, item: SubscriptionItem): Promise<void> {
         const numericUserId = Number(userId);
-        
+
         try {
             switch (item) {
                 case SubscriptionItem.DAILY_MARKET_INFO:
