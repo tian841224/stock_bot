@@ -10,7 +10,7 @@ RUN npm ci --include=dev
 
 # 複製源碼並構建
 COPY . .
-RUN npx prisma generate \
+RUN npx prisma genlerate \
     && npm run build \
     && rm -rf node_modules \
     && npm ci --omit=dev
