@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 資料庫服務
+  postgres:
+    image: postgres:latest
+    container_name: stock-bot-db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: stock_bot
+    volumes:
+      - stock-bot-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d stock_bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 應用程式服務
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stock-bot-api
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://admin:admin123@postgres:5432/stock_bot?schema=public
+      # NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  stock-bot-db:
