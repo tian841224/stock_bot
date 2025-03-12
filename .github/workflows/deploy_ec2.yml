@@ -25,31 +25,30 @@ jobs:
 
   Deploy:
     runs-on: ubuntu-latest
-    needs: Build
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Extract repository name
-        run: |
-          REPO_NAME=${{ github.repository }}
-          REPO_NAME=${REPO_NAME##*/}
-          echo "Repository name: $REPO_NAME"
-          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+      - name: Create artifacts directory
+        run: mkdir -p artifacts
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Copy Docker and config files to artifacts
+        run: |
+          cp docker-compose.yml artifacts/
+          cp Dockerfile artifacts/
+          cp -r prisma/ artifacts/ || echo "No prisma directory"
+          cp package.json artifacts/
+          cp package-lock.json artifacts/ || echo "No package-lock.json"
+
+      - name: Upload artifacts to EC2
+        uses: appleboy/scp-action@master
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest .
-
-      - name: Push Docker image to Docker Hub
-        run: |
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "artifacts/*"
+          target: "~/"
+          strip_components: 1
 
       - name: Execute remote SSH commands
         uses: appleboy/ssh-action@master
@@ -58,18 +57,11 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            REPO_NAME=${{ github.repository }}
-            REPO_NAME=${REPO_NAME##*/}
-            if [ -z "$REPO_NAME" ]; then
-              echo "Error: REPO_NAME is empty"
-              exit 1
-            fi
-
             echo "Creating .env file..."
             cat > ~/.env << EOL
             DB_USER='${{ secrets.DB_USER }}'
             DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
-            DB_NAME='${{ secrets.DATABASE_URL }}'
+            DB_NAME='stock_bot'
             CHANNEL_ACCESS_TOKEN='${{ secrets.CHANNEL_ACCESS_TOKEN }}'
             CHANNEL_SECRET='${{ secrets.CHANNEL_SECRET }}'
             TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
@@ -87,40 +79,21 @@ jobs:
               sudo docker rm $CONTAINERS_USING_PORT
             fi
 
-            echo "Checking for existing container..."
-            if sudo docker ps -a --format '{{.Names}}' | grep -q "^$REPO_NAME$"; then
-              echo "Stopping and removing container: $REPO_NAME"
-              sudo docker stop $REPO_NAME || echo "Failed to stop container"
-              sudo docker rm $REPO_NAME || echo "Failed to remove container"
-            else
-              echo "Container $REPO_NAME does not exist, skipping stop/remove."
-            fi
-
-            echo "Removing old images for $REPO_NAME..."
-            sudo docker images -q ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME | sort -u | xargs --no-run-if-empty sudo docker rmi -f || echo "No old images to remove or removal failed"
-
-            echo "Cleaning up unused images..."
-            sudo docker image prune -f || echo "Failed to prune unused images"
-
-            echo "Waiting for cleanup to settle..."
-            sleep 5
-
-            echo "Pulling new image..."
-            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
-            
-            echo "Starting new container..."
-            sudo docker run -d --name $REPO_NAME \
-              --restart=unless-stopped \
-              -p 3000:3000 \
-              -v ~/.env:/app/.env \
-              ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+            echo "Building and starting containers with docker-compose..."
+            cd ~/artifacts
+            sudo docker-compose --env-file ~/.env down
+            sudo docker-compose --env-file ~/.env build
+            sudo docker-compose --env-file ~/.env up -d
 
             echo "Verifying container status..."
-            if ! sudo docker ps | grep -q "$REPO_NAME"; then
+            if ! sudo docker ps | grep -q "stock-bot-api"; then
               echo "Container failed to start"
-              sudo docker logs $REPO_NAME
+              sudo docker-compose logs
               exit 1
             fi
 
-            echo "Container successfully started"
-            sudo docker ps | grep "$REPO_NAME"
+            echo "Containers successfully started"
+            sudo docker ps | grep "stock-bot"
+            
+            echo "Cleaning up unused images..."
+            sudo docker image prune -f || echo "Failed to prune unused images"
