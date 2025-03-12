@@ -35,7 +35,7 @@ jobs:
       - name: Copy Docker and config files to artifacts
         run: |
           cp docker-compose.yml artifacts/
-          cp Dockerfile artifacts/
+          cp dockerfile artifacts/
           cp -r prisma/ artifacts/ || echo "No prisma directory"
           cp package.json artifacts/
           cp package-lock.json artifacts/ || echo "No package-lock.json"
