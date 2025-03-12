@@ -106,7 +106,7 @@ jobs:
             sudo docker-compose --env-file .env up -d
 
             echo "驗證容器狀態..."
-            if ! sudo docker ps | grep -q "stock-bot-api"; then
+            if ! sudo docker ps | grep -q "stock-bot"; then
               echo "容器啟動失敗"
               sudo docker-compose logs
               exit 1
