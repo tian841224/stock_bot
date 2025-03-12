@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - master
+      - feature/測試CICD
 
 jobs:
   Build:
@@ -67,20 +67,16 @@ jobs:
 
             echo "Creating .env file..."
             cat > ~/.env << EOL
-            DB_TYPE=${{ secrets.DB_TYPE }}
-            SQLITE_DB=${{ secrets.SQLITE_DB }}
-            MYSQL_HOST=${{ secrets.MYSQL_HOST }}
-            MYSQL_PORT=${{ secrets.MYSQL_PORT }}
-            MYSQL_USER=${{ secrets.MYSQL_USER }}
-            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-            CHANNEL_ACCESS_TOKEN=${{ secrets.CHANNEL_ACCESS_TOKEN }}
-            CHANNEL_SECRET=${{ secrets.CHANNEL_SECRET }}
-            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-            TELEGRAM_BOT_WEBHOOK_DOMAIN=${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}
-            TELEGRAM_BOT_WEBHOOK_PATH=${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}
-            TELEGRAM_BOT_SECRET_TOKEN=${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}
-            IMGUR_CLIENT_ID=${{ secrets.IMGUR_CLIENT_ID }}
+            DB_USER='${{ secrets.DB_USER }}'
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            DB_NAME='${{ secrets.DATABASE_URL }}'
+            CHANNEL_ACCESS_TOKEN='${{ secrets.CHANNEL_ACCESS_TOKEN }}'
+            CHANNEL_SECRET='${{ secrets.CHANNEL_SECRET }}'
+            TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
+            TELEGRAM_BOT_WEBHOOK_DOMAIN='${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}'
+            TELEGRAM_BOT_WEBHOOK_PATH='${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}'
+            TELEGRAM_BOT_SECRET_TOKEN='${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}'
+            IMGUR_CLIENT_ID='${{ secrets.IMGUR_CLIENT_ID }}'
             EOL
 
             echo "Checking and cleaning up port 3000..."
