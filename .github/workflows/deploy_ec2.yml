@@ -37,9 +37,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.REPO_NAME }}:latest
-          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.REPO_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.REPO_NAME }}:buildcache,mode=max
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:buildcache,mode=max
 
   Deploy:
     needs: Build
