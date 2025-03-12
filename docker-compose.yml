@@ -19,7 +19,7 @@ services:
 
   api:
     # 改用 image 方式，指向 Docker Hub 上的映像檔
-    image: ${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:latest
+    image: jacky841224j/stock-bot:latest
     container_name: stock-bot
     restart: always
     environment:
