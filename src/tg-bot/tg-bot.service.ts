@@ -56,10 +56,11 @@ export class TgBotService {
 訂閱股票資訊
 - /add [股票代碼] - 訂閱 股票
 - /del [股票代碼] - 取消訂閱 股票
-- /sub t - 訂閱 當日交易量前20名
-- /sub d - 訂閱 當日市場成交行情
-- /sub n - 訂閱 觀察清單新聞
-- /sub i - 訂閱 當日個股資訊
+- /sub 1 - 訂閱 當日個股資訊
+- /sub 2 - 訂閱 觀察清單新聞
+- /sub 3 - 訂閱 當日市場成交行情
+- /sub 4 - 訂閱 當日交易量前20名
+
 (取消訂閱 unsub + 代號)`;
 
         await this.tgBot.sendMessage(userId, text);
