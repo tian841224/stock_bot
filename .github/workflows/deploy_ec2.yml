@@ -51,7 +51,7 @@ jobs:
       - name: 準備部署封包
         run: |
           mkdir -p artifacts
-          # 只需要 docker-compose 檔案（若有其他部署需要的設定檔也可複製）
+          # 只需要 docker-compose.yml 檔案（若有其他部署需要的設定檔也可複製）
           cp docker-compose.yml artifacts/
           
       - name: 壓縮部署封包
@@ -64,7 +64,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "deploy.tar.gz"
-          target: "~/"
+          target: "~/"  
 
       - name: 執行遠端 SSH 指令
         uses: appleboy/ssh-action@master
@@ -79,6 +79,7 @@ jobs:
 
             echo "建立 .env 檔案..."
             cat > .env <<EOL
+            DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }}
             DB_USER=${{ secrets.DB_USER }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_NAME=stock_bot
