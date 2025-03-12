@@ -24,7 +24,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     container_name: stock-bot-api
     restart: always
     environment:
