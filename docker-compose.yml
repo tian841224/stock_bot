@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # PostgreSQL 資料庫服務
   postgres:
     image: postgres:latest
     container_name: stock-bot-db
@@ -20,16 +17,13 @@ services:
       timeout: 5s
       retries: 5
 
-  # 應用程式服務
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # 改用 image 方式，指向 Docker Hub 上的映像檔
+    image: ${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot-api:latest
     container_name: stock-bot-api
     restart: always
     environment:
       DATABASE_URL: postgresql://admin:admin123@postgres:5432/stock_bot?schema=public
-      # NODE_ENV: production
     ports:
       - "3000:3000"
     depends_on:
