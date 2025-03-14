@@ -247,6 +247,7 @@ export class TwStockInfoService {
                 image: image,
             });
             this.logger.log('傳送圖表');
+            await this.browserService.closePage();
             return result;
         }
         catch (error) {
@@ -346,6 +347,7 @@ export class TwStockInfoService {
                 image: await chartElement.screenshot()
             };
             this.logger.log('傳送圖表');
+            await this.browserService.closePage();
             return result;
         }
         catch (error) {
@@ -412,7 +414,7 @@ export class TwStockInfoService {
                 symbol: symbol,
                 image: screenshot,
             });
-
+            await this.browserService.closePage();
             return result;
         } catch (error) {
             this.logger.error(error, 'getDetailPriceAsync');
@@ -453,7 +455,7 @@ export class TwStockInfoService {
                     newsList.push({ text, url });
                 }
             }
-
+            await this.browserService.closePage();
             return {
                 stockName,
                 newsList
