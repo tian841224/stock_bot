@@ -97,7 +97,7 @@ jobs:
           script: |
             set -e
             tar -xzf ~/deploy.tar.gz -C ~/
-            cd ~/deploy
+            cd ~/
 
             echo "Creating .env file..."
             cat > ~/.env << EOL
