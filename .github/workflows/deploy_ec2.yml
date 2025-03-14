@@ -17,18 +17,49 @@ jobs:
         with:
           node-version: '22.x'
 
+      - name: 快取 node_modules
+        uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: 安裝相依套件
+        if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: 建置 NestJS 應用程式
         run: npm run build
 
+      - name: 快取建置後專案
+        uses: actions/cache@v3
+        with:
+          path: dist
+          key: ${{ runner.os }}-dist-${{ github.sha }}
+
+      - name: 上傳建置產物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+
   Push:
     needs: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 程式碼
-        uses: actions/checkout@v4
+      - name: 下載建置產物
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: 設定 Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: 登入 Docker Hub
         uses: docker/login-action@v3
@@ -36,76 +67,74 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push Docker image
+      - name: 建置並推送 Docker 映像檔
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:latest
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:${{ github.sha }}
           cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:buildcache,mode=max
 
   Deploy:
-    needs: Build
+    needs: Push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 程式碼
         uses: actions/checkout@v4
 
-      - name: 準備部署封包
+      - name: 準備部署檔案
         run: |
           mkdir -p artifacts
-          # 只需要 docker-compose.yml 檔案（若有其他部署需要的設定檔也可複製）
           cp docker-compose.yml artifacts/
+          cp .env.example artifacts/.env || true
           
       - name: 壓縮部署封包
         run: tar -czf deploy.tar.gz -C artifacts .
 
-      - name: 上傳部署封包至 EC2
+      - name: 上傳至 EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "deploy.tar.gz"
-          target: "~/"  
+          target: "~/"
 
-      - name: 執行遠端 SSH 指令
+      - name: 部署到 EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
             mkdir -p ~/deploy
             tar -xzf ~/deploy.tar.gz -C ~/deploy
             cd ~/deploy
 
-            echo "檢查並清理 3000 埠口的容器..."
-            CONTAINERS_USING_PORT=$(sudo docker ps -q --filter "publish=3000")
-            if [ ! -z "$CONTAINERS_USING_PORT" ]; then
-              echo "停止使用 3000 埠口的容器..."
-              sudo docker stop $CONTAINERS_USING_PORT
-              sudo docker rm $CONTAINERS_USING_PORT
-            fi
+            echo "停止並移除現有容器..."
+            sudo docker-compose down || true
 
-            echo "使用 docker-compose 拉取最新映像檔並啟動容器..."
-            sudo docker-compose --env-file .env down
-            sudo docker-compose --env-file .env pull
-            sudo docker-compose --env-file .env up -d
+            echo "清理未使用的容器和映像檔..."
+            sudo docker container prune -f
+            sudo docker image prune -f
 
-            echo "驗證容器狀態..."
-            if ! sudo docker ps | grep -q "stock-bot"; then
-              echo "容器啟動失敗"
+            echo "拉取最新映像檔並啟動服務..."
+            sudo docker-compose pull
+            sudo docker-compose up -d
+
+            echo "等待服務啟動..."
+            sleep 10
+
+            echo "檢查服務狀態..."
+            if ! sudo docker-compose ps | grep -q "Up"; then
+              echo "服務啟動失敗！"
               sudo docker-compose logs
               exit 1
             fi
 
-            echo "容器成功啟動"
-            sudo docker ps | grep "stock-bot"
-            
-            echo "清除未使用的映像檔..."
-            sudo docker image prune -f || echo "清除未使用的映像檔失敗"
+            echo "部署完成！"
+            sudo docker-compose ps
