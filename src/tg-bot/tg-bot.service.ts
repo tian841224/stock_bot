@@ -168,7 +168,8 @@ export class TgBotService {
                 userId,
                 { source: imageBuffer },
                 {
-                    caption: `${result.stockName}(${symbol})-股票詳細資訊　📝`,
+                    // caption: `${result.stockName}(${symbol})-股票詳細資訊　📝${result.details}`,
+                    caption: `${result.details}`,
                     parse_mode: 'HTML'
                 }
             );
@@ -357,7 +358,7 @@ export class TgBotService {
                 return;
             }
 
-            let subscriptionName : string;
+            let subscriptionName: string;
             switch (subscription) {
                 case SubscriptionItem.STOCK_INFO:
                     subscriptionName = '股票資訊';
@@ -405,7 +406,7 @@ export class TgBotService {
 
             await this.repositoryService.updateUserSubscriptionItemAsync(userId.toString(), subscription, status);
 
-            let subscriptionName : string;
+            let subscriptionName: string;
             switch (subscription) {
                 case SubscriptionItem.STOCK_INFO:
                     subscriptionName = '股票資訊';
