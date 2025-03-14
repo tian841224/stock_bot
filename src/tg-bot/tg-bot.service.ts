@@ -109,7 +109,7 @@ export class TgBotService {
                         break;
                 }
             }
-            
+
             let result = await this.twStockInfoService.getKlineAsync(symbol, timeRange);
             const imageBuffer = Buffer.from(result.image);
 
@@ -357,8 +357,24 @@ export class TgBotService {
                 return;
             }
 
+            let subscriptionName : string;
+            switch (subscription) {
+                case SubscriptionItem.STOCK_INFO:
+                    subscriptionName = '股票資訊';
+                    break;
+                case SubscriptionItem.STOCK_NEWS:
+                    subscriptionName = '股票新聞';
+                    break;
+                case SubscriptionItem.DAILY_MARKET_INFO:
+                    subscriptionName = '市場成交行情';
+                    break;
+                case SubscriptionItem.TOP_VOLUME_ITEMS:
+                    subscriptionName = '交易量前20名';
+                    break;
+            }
+
             await this.repositoryService.addUserSubscriptionItemAsync(userId.toString(), subscription);
-            await this.tgBot.sendMessage(userId, '訂閱成功');
+            await this.tgBot.sendMessage(userId, `取消訂閱成功 : ${subscriptionName}`);
         } catch (error) {
             this.logger.error(error, 'addUserSubscription');
             await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
@@ -389,10 +405,26 @@ export class TgBotService {
 
             await this.repositoryService.updateUserSubscriptionItemAsync(userId.toString(), subscription, status);
 
+            let subscriptionName : string;
+            switch (subscription) {
+                case SubscriptionItem.STOCK_INFO:
+                    subscriptionName = '股票資訊';
+                    break;
+                case SubscriptionItem.STOCK_NEWS:
+                    subscriptionName = '股票新聞';
+                    break;
+                case SubscriptionItem.DAILY_MARKET_INFO:
+                    subscriptionName = '市場成交行情';
+                    break;
+                case SubscriptionItem.TOP_VOLUME_ITEMS:
+                    subscriptionName = '交易量前20名';
+                    break;
+            }
+
             if (status === 0) {
-                await this.tgBot.sendMessage(userId, '取消訂閱成功');
+                await this.tgBot.sendMessage(userId, `取消訂閱成功 : ${subscriptionName}`);
             } else {
-                await this.tgBot.sendMessage(userId, '訂閱成功');
+                await this.tgBot.sendMessage(userId, `訂閱成功 : ${subscriptionName}`);
             }
 
         } catch (error) {
