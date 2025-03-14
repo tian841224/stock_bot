@@ -96,9 +96,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            mkdir -p ~/
-            tar -xzf ~/.tar.gz -C ~/
-            cd ~/
+            tar -xzf ~/deploy.tar.gz -C ~/
+            cd ~/deploy
 
             echo "Creating .env file..."
             cat > ~/.env << EOL
