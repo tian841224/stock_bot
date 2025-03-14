@@ -40,6 +40,7 @@ jobs:
         run: npm run build
 
   Push:
+    if: github.event_name == 'push'
     needs: Build
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +68,7 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:buildcache,mode=max
 
   Deploy:
+    if: github.event_name == 'push'
     needs: Push
     runs-on: ubuntu-latest
     steps:
