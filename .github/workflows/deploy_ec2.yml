@@ -74,7 +74,7 @@ jobs:
         run: |
           mkdir -p artifacts
           cp docker-compose.yml artifacts/
-          cp .env.example artifacts/.env || true
+          cp .env artifacts/.env || true
           
       - name: 壓縮部署封包
         run: tar -czf deploy.tar.gz -C artifacts .
