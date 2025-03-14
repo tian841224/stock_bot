@@ -4,9 +4,9 @@ services:
     container_name: stock-bot-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: stock_bot
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - stock-bot-db:/var/lib/postgresql/data
     ports:
@@ -19,11 +19,11 @@ services:
 
   api:
     # 改用 image 方式，指向 Docker Hub 上的映像檔
-    image: jacky841224j/stock-bot:latest
+    image: ${DOCKER_HUB_USERNAME}/stock-bot:latest
     container_name: stock-bot
     restart: always
     environment:
-      DATABASE_URL: postgresql://admin:admin123@postgres:5432/stock_bot?schema=public
+      DATABASE_URL: ${DATABASE_URL}
     ports:
       - "3000:3000"
     depends_on:
