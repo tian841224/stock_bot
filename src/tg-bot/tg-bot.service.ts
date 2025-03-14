@@ -56,7 +56,9 @@ export class TgBotService {
 訂閱股票資訊
 - /add [股票代碼] - 訂閱 股票
 - /del [股票代碼] - 取消訂閱 股票
-- /sub 1 - 訂閱 當日個股資訊
+- /sub 1 - 訂閱 當日個股資訊on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 - /sub 2 - 訂閱 觀察清單新聞
 - /sub 3 - 訂閱 當日市場成交行情
 - /sub 4 - 訂閱 當日交易量前20名
@@ -337,7 +339,13 @@ export class TgBotService {
                 await this.tgBot.sendMessage(userId, `無效的訂閱項目: ${item}`);
                 return;
             }
-
+            
+            // 取得使用者 
+            const user = await this.repositoryService.getUserAsync(userId.toString(), UserType.TELEGRAM);
+            if(user == null) {
+                await this.tgBot.sendMessage(userId, '無法取得使用者');
+                return;
+            }
             // 取得使用者訂閱項目
             const userSubItem = await this.repositoryService.getUserSubscriptionByItemAsync(userId.toString(), subscription);
             if (userSubItem === null) {
