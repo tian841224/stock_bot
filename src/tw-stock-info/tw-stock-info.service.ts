@@ -5,6 +5,7 @@ import { BrowserService } from '../browser/browser.service';
 import { TopVolumeItemsResponseDto } from './interface/top-volume-item-response-dto';
 import { AfterTradingVolumeResponseDto } from './interface/after-trading-volume-response-dto';
 import { DailyMarketInfoResponseDto } from './interface/daily-market-Info-response-dto';
+import { ConfigService } from '@nestjs/config';
 
 
 @Injectable()
@@ -18,6 +19,7 @@ export class TwStockInfoService {
 
 
     constructor(
+        private readonly configService: ConfigService,
         private readonly browserService: BrowserService,
     ) { }
 
@@ -297,7 +299,7 @@ export class TwStockInfoService {
             // stockDetailsList欄位對應中文
             const InfoDic: InfoDictionary = {
                 1: "開盤價", 2: "最高價", 3: "成交量",
-                4: "昨日收盤價", 5: "最低價", 6: "成交額",
+                4: "收盤價", 5: "最低價", 6: "成交額",
                 7: "均價", 8: "本益比", 9: "市值",
                 10: "振幅", 11: "迴轉率", 12: "發行股",
                 13: "漲停", 14: "52W高", 15: "內盤量",
@@ -307,10 +309,12 @@ export class TwStockInfoService {
                 25: "年股利", 26: "殖利率", 27: "淨利率"
             };
 
-            const output = [1, 2, 5]; // 選擇輸出欄位
+            const output = this.configService.get<string>('DETAIL_PRICE_OUTPUT', '1,2,5')
+                .split(',')
+                .map(field => parseInt(field.trim()));
 
             let chart: string[] = [];
-            chart.push(`<b>-${stockName}-📝</b>`);
+            chart.push(`<b>${stockName}(${symbol}) - 股票詳細資訊　📝</b>`);
             chart.push(`<code>收盤價：${price}</code>`);
             chart.push(`<code>漲跌幅：${changePrice}</code>`);
             chart.push(`<code>漲跌%：${amplitude}</code>`);
@@ -338,7 +342,7 @@ export class TwStockInfoService {
                 price: price,
                 changePrice: changePrice,
                 amplitude: amplitude,
-                details: chart,
+                details: chart.join('\n'),
                 image: await chartElement.screenshot()
             };
             this.logger.log('傳送圖表');

@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: stock-bot-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - stock-bot-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 1h      
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  api:
+    image: ${DOCKER_HUB_USERNAME}/stock-bot:latest
+    container_name: stock-bot-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      DOCKER_HUB_USERNAME: ${DOCKER_HUB_USERNAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: stock_bot
+      CHANNEL_ACCESS_TOKEN: ${CHANNEL_ACCESS_TOKEN}
+      CHANNEL_SECRET: ${CHANNEL_SECRET}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_BOT_WEBHOOK_DOMAIN: ${TELEGRAM_BOT_WEBHOOK_DOMAIN}
+      TELEGRAM_BOT_WEBHOOK_PATH: ${TELEGRAM_BOT_WEBHOOK_PATH}
+      TELEGRAM_BOT_SECRET_TOKEN: ${TELEGRAM_BOT_SECRET_TOKEN}
+      IMGUR_CLIENT_ID: ${IMGUR_CLIENT_ID}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  stock-bot-db:
