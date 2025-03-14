@@ -79,7 +79,7 @@ jobs:
         run: |
           mkdir -p artifacts
           cp docker-compose.yml artifacts/
-          cp .env.example artifacts/.env || true
+          cp .env artifacts/.env || true
           
       - name: 壓縮部署封包
         run: tar -czf deploy.tar.gz -C artifacts .
@@ -101,9 +101,24 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            mkdir -p ~/deploy
-            tar -xzf ~/deploy.tar.gz -C ~/deploy
-            cd ~/deploy
+            tar -xzf ~/deploy.tar.gz -C ~/
+            cd ~/
+
+            echo "建立 .env 檔案..."
+            cat > ~/.env << EOL
+            DOCKER_HUB_USERNAME = '${{ secrets.DOCKER_HUB_USERNAME }}'
+            DATABASE_URL= '${{ secrets.DATABASE_URL }}'
+            DB_USER='${{ secrets.DB_USER }}'
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            DB_NAME='${{ secrets.DB_NAME }}'
+            CHANNEL_ACCESS_TOKEN='${{ secrets.CHANNEL_ACCESS_TOKEN }}'
+            CHANNEL_SECRET='${{ secrets.CHANNEL_SECRET }}'
+            TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
+            TELEGRAM_BOT_WEBHOOK_DOMAIN='${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}'
+            TELEGRAM_BOT_WEBHOOK_PATH='${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}'
+            TELEGRAM_BOT_SECRET_TOKEN='${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}'
+            IMGUR_CLIENT_ID='${{ secrets.IMGUR_CLIENT_ID }}'
+            EOL
 
             echo "停止並移除現有容器..."
             sudo docker-compose down || true
