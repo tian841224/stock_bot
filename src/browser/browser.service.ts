@@ -27,6 +27,16 @@ export class BrowserService {
     return this.page!;
   }
 
+  async closePage() {
+    if (this.page || !this.page.isClosed()) {
+      await this.page.close();
+      if (this.page && !this.page.isClosed()) {
+        await this.page.close();
+        this.logger.log('Page已關閉');
+      }
+    }
+  }
+
   async dispose(): Promise<void> {
     try {
       if (this.page && !this.page.isClosed()) {
