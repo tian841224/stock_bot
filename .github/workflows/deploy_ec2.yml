@@ -22,11 +22,12 @@ jobs:
         id: npm-cache
         with:
           path: |
-            node_modules
+            **/node_modules
             ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-${{ github.ref }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-node-modules-
 
       - name: 安裝相依套件
         if: steps.npm-cache.outputs.cache-hit != 'true'
