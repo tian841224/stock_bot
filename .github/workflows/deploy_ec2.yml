@@ -99,32 +99,36 @@ jobs:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          command_timeout: "10m"
           script: |
             set -e
             mkdir -p ~/deploy
             tar -xzf ~/deploy.tar.gz -C ~/deploy
             cd ~/deploy
-
             echo "停止並移除現有容器..."
             sudo docker-compose down || true
-
             echo "清理未使用的容器和映像檔..."
             sudo docker container prune -f
             sudo docker image prune -f
-
-            echo "拉取最新映像檔並啟動服務..."
+            echo "拉取最新映像檔..."
             sudo docker-compose pull
+            echo "啟動服務..."
             sudo docker-compose up -d
-
-            echo "等待服務啟動..."
-            sleep 10
-
             echo "檢查服務狀態..."
-            if ! sudo docker-compose ps | grep -q "Up"; then
-              echo "服務啟動失敗！"
-              sudo docker-compose logs
-              exit 1
-            fi
-
-            echo "部署完成！"
-            sudo docker-compose ps
+            # 使用循環檢查服務，最多等待2分鐘
+            MAX_ATTEMPTS=12
+            ATTEMPT=0
+            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+              if sudo docker-compose ps | grep -q "Up"; then
+                echo "服務已成功啟動!"
+                sudo docker-compose ps
+                exit 0
+              fi
+              echo "等待服務啟動中... ($(($ATTEMPT+1))/$MAX_ATTEMPTS)"
+              sleep 10
+              ATTEMPT=$(($ATTEMPT+1))
+            done
+            echo "服務啟動超時，顯示日誌："
+            sudo docker-compose logs
+            exit 1
