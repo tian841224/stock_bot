@@ -76,6 +76,40 @@ export class TgBotService {
                 return;
             }
 
+            // 轉換時間範圍
+            if (timeRange != null) {
+                switch (timeRange) {
+                    case 'h':
+                        timeRange = '分時';
+                        break;
+                    case 'd':
+                        timeRange = '日K';
+                        break;
+                    case 'w':
+                        timeRange = '週K';
+                        break;
+                    case 'm':
+                        timeRange = '月K';
+                        break;
+                    case '5m':
+                        timeRange = '5分';
+                        break;
+                    case '15m':
+                        timeRange = '15分';
+                        break;
+                    case '30m':
+                        timeRange = '30分';
+                        break;
+                    case '60m':
+                        timeRange = '60分';
+                        break;
+                    default:
+                        timeRange = '日K'; // 預設值
+                        this.logger.log(`getKlineAsync: 未輸入正確時間範圍，使用預設值`);
+                        break;
+                }
+            }
+            
             let result = await this.twStockInfoService.getKlineAsync(symbol, timeRange);
             const imageBuffer = Buffer.from(result.image);
 
@@ -339,10 +373,10 @@ export class TgBotService {
                 await this.tgBot.sendMessage(userId, `無效的訂閱項目: ${item}`);
                 return;
             }
-            
+
             // 取得使用者 
             const user = await this.repositoryService.getUserAsync(userId.toString(), UserType.TELEGRAM);
-            if(user == null) {
+            if (user == null) {
                 await this.tgBot.sendMessage(userId, '無法取得使用者');
                 return;
             }
@@ -409,13 +443,13 @@ export class TgBotService {
         const messageText = message.text;
         const userId = message.chat.id;
         const command1 = messageText.split(' ')[1];
-
+        const command2 = messageText.split(' ')[2];
         switch (messageText.split(' ')[0]) {
             case '/start':
                 this.start(userId);
                 break;
             case '/k':
-                await this.getKlineAsync(userId, command1);
+                await this.getKlineAsync(userId, command1, command2);
                 break;
             case '/p':
                 await this.getPerformanceAsync(userId, command1);
@@ -466,5 +500,5 @@ export class TgBotService {
     private parseSubscriptionItem(input: string | number): SubscriptionItem | null {
         const key = String(input);
         return this.subscriptionItemMap[key] ?? null;
-      }
+    }
 }
