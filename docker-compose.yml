@@ -16,7 +16,7 @@ services:
       interval: 1h      
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 30s
 
   api:
     image: ${DOCKER_HUB_USERNAME}/stock-bot:latest
