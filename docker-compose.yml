@@ -1,15 +1,12 @@
-version: '3.8'
-
 services:
-  # PostgreSQL 資料庫服務
   postgres:
     image: postgres:latest
     container_name: stock-bot-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: stock_bot
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - stock-bot-db:/var/lib/postgresql/data
     ports:
@@ -20,16 +17,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # 應用程式服務
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: stock-bot-api
+    # 改用 image 方式，指向 Docker Hub 上的映像檔
+    image: ${DOCKER_HUB_USERNAME}/stock-bot:latest
+    container_name: stock-bot
     restart: always
     environment:
-      DATABASE_URL: postgresql://admin:admin123@postgres:5432/stock_bot?schema=public
-      # NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      DOCKER_HUB_USERNAME: ${DOCKER_HUB_USERNAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: stock_bot
+      CHANNEL_ACCESS_TOKEN: ${CHANNEL_ACCESS_TOKEN}
+      CHANNEL_SECRET: ${CHANNEL_SECRET}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_BOT_WEBHOOK_DOMAIN: ${TELEGRAM_BOT_WEBHOOK_DOMAIN}
+      TELEGRAM_BOT_WEBHOOK_PATH: ${TELEGRAM_BOT_WEBHOOK_PATH}
+      TELEGRAM_BOT_SECRET_TOKEN: ${TELEGRAM_BOT_SECRET_TOKEN}
+      IMGUR_CLIENT_ID: ${IMGUR_CLIENT_ID}
     ports:
       - "3000:3000"
     depends_on:
