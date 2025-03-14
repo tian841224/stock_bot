@@ -79,7 +79,7 @@ jobs:
         run: |
           mkdir -p artifacts
           cp docker-compose.yml artifacts/
-          cp .env.example artifacts/.env || true
+          cp .env artifacts/.env || true
           
       - name: 壓縮部署封包
         run: tar -czf deploy.tar.gz -C artifacts .
@@ -99,17 +99,18 @@ jobs:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          command_timeout: "10m"
           script: |
             set -e
-            mkdir -p ~/deploy
-            tar -xzf ~/deploy.tar.gz -C ~/deploy
-            cd ~/deploy
+            tar -xzf ~/deploy.tar.gz -C ~/
+            cd ~/
 
-            echo "建立 .env檔 ..."
+            echo "建立 .env 檔案..."
             cat > ~/.env << EOL
-            DOCKER_HUB_USERNAME='${{ secrets.DOCKER_HUB_USERNAME }}'
-            DATABASE_URL='${{ secrets.DATABASE_URL }}'
+            DOCKER_HUB_USERNAME = '${{ secrets.DOCKER_HUB_USERNAME }}'
+            DATABASE_URL= '${{ secrets.DATABASE_URL }}'
+            DB_USER='${{ secrets.DB_USER }}'
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            DB_NAME='${{ secrets.DB_NAME }}'
             CHANNEL_ACCESS_TOKEN='${{ secrets.CHANNEL_ACCESS_TOKEN }}'
             CHANNEL_SECRET='${{ secrets.CHANNEL_SECRET }}'
             TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
@@ -117,26 +118,28 @@ jobs:
             TELEGRAM_BOT_WEBHOOK_PATH='${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}'
             TELEGRAM_BOT_SECRET_TOKEN='${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}'
             IMGUR_CLIENT_ID='${{ secrets.IMGUR_CLIENT_ID }}'
-            DB_USER='${{ secrets.DB_USER }}'
-            DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
-            DB_NAME='${{ secrets.DB_NAME }}'
             EOL
 
             echo "停止並移除現有容器..."
             sudo docker-compose down || true
+
             echo "清理未使用的容器和映像檔..."
             sudo docker container prune -f
             sudo docker image prune -f
+
             echo "拉取最新映像檔並啟動服務..."
             sudo docker-compose pull
             sudo docker-compose up -d
+
             echo "等待服務啟動..."
             sleep 10
+
             echo "檢查服務狀態..."
             if ! sudo docker-compose ps | grep -q "Up"; then
               echo "服務啟動失敗！"
               sudo docker-compose logs
               exit 1
             fi
+
             echo "部署完成！"
             sudo docker-compose ps
