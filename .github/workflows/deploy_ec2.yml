@@ -105,6 +105,23 @@ jobs:
             mkdir -p ~/deploy
             tar -xzf ~/deploy.tar.gz -C ~/deploy
             cd ~/deploy
+
+            echo "建立 .env檔 ..."
+            cat > ~/.env << EOL
+            DOCKER_HUB_USERNAME='${{ secrets.DOCKER_HUB_USERNAME }}'
+            DATABASE_URL='${{ secrets.DATABASE_URL }}'
+            CHANNEL_ACCESS_TOKEN='${{ secrets.CHANNEL_ACCESS_TOKEN }}'
+            CHANNEL_SECRET='${{ secrets.CHANNEL_SECRET }}'
+            TELEGRAM_BOT_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
+            TELEGRAM_BOT_WEBHOOK_DOMAIN='${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}'
+            TELEGRAM_BOT_WEBHOOK_PATH='${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}'
+            TELEGRAM_BOT_SECRET_TOKEN='${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}'
+            IMGUR_CLIENT_ID='${{ secrets.IMGUR_CLIENT_ID }}'
+            DB_USER='${{ secrets.DB_USER }}'
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            DB_NAME='${{ secrets.DB_NAME }}'
+            EOL
+
             echo "停止並移除現有容器..."
             sudo docker-compose down || true
             echo "清理未使用的容器和映像檔..."
