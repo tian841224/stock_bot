@@ -4,127 +4,125 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   Build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout 程式碼
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: 設定 Node.js 環境
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
 
-      - name: Install dependencies
-        run: npm install
+      - name: 快取 node_modules
+        uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: |
+            **/node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-${{ github.ref }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-
+            ${{ runner.os }}-node-modules-
 
-      - name: Build NestJS app
+      - name: 安裝相依套件
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: 建置 NestJS 應用程式
         run: npm run build
 
-  Deploy:
-    runs-on: ubuntu-latest
+  Push:
     needs: Build
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout 程式碼
         uses: actions/checkout@v4
 
-      - name: Extract repository name
-        run: |
-          REPO_NAME=${{ github.repository }}
-          REPO_NAME=${REPO_NAME##*/}
-          echo "Repository name: $REPO_NAME"
-          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+      - name: 設定 Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: 登入 Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest .
+      - name: 建置並推送 Docker 映像檔
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:latest
+            ${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/stock-bot:buildcache,mode=max
 
-      - name: Push Docker image to Docker Hub
-        run: |
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
+  Deploy:
+    needs: Push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 程式碼
+        uses: actions/checkout@v4
 
-      - name: Execute remote SSH commands
+      - name: 準備部署檔案
+        run: |
+          mkdir -p artifacts
+          cp docker-compose.yml artifacts/
+          cp .env.example artifacts/.env || true
+          
+      - name: 壓縮部署封包
+        run: tar -czf deploy.tar.gz -C artifacts .
+
+      - name: 上傳至 EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "deploy.tar.gz"
+          target: "~/"
+
+      - name: 部署到 EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            REPO_NAME=${{ github.repository }}
-            REPO_NAME=${REPO_NAME##*/}
-            if [ -z "$REPO_NAME" ]; then
-              echo "Error: REPO_NAME is empty"
+            set -e
+            mkdir -p ~/deploy
+            tar -xzf ~/deploy.tar.gz -C ~/deploy
+            cd ~/deploy
+
+            echo "停止並移除現有容器..."
+            sudo docker-compose down || true
+
+            echo "清理未使用的容器和映像檔..."
+            sudo docker container prune -f
+            sudo docker image prune -f
+
+            echo "拉取最新映像檔並啟動服務..."
+            sudo docker-compose pull
+            sudo docker-compose up -d
+
+            echo "等待服務啟動..."
+            sleep 10
+
+            echo "檢查服務狀態..."
+            if ! sudo docker-compose ps | grep -q "Up"; then
+              echo "服務啟動失敗！"
+              sudo docker-compose logs
               exit 1
             fi
 
-            echo "Creating .env file..."
-            cat > ~/.env << EOL
-            DB_TYPE=${{ secrets.DB_TYPE }}
-            SQLITE_DB=${{ secrets.SQLITE_DB }}
-            MYSQL_HOST=${{ secrets.MYSQL_HOST }}
-            MYSQL_PORT=${{ secrets.MYSQL_PORT }}
-            MYSQL_USER=${{ secrets.MYSQL_USER }}
-            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
-            CHANNEL_ACCESS_TOKEN=${{ secrets.CHANNEL_ACCESS_TOKEN }}
-            CHANNEL_SECRET=${{ secrets.CHANNEL_SECRET }}
-            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-            TELEGRAM_BOT_WEBHOOK_DOMAIN=${{ secrets.TELEGRAM_BOT_WEBHOOK_DOMAIN }}
-            TELEGRAM_BOT_WEBHOOK_PATH=${{ secrets.TELEGRAM_BOT_WEBHOOK_PATH }}
-            TELEGRAM_BOT_SECRET_TOKEN=${{ secrets.TELEGRAM_BOT_SECRET_TOKEN }}
-            IMGUR_CLIENT_ID=${{ secrets.IMGUR_CLIENT_ID }}
-            EOL
-
-            echo "Checking and cleaning up port 3000..."
-            CONTAINERS_USING_PORT=$(sudo docker ps -q --filter "publish=3000")
-            if [ ! -z "$CONTAINERS_USING_PORT" ]; then
-              echo "Stopping containers using port 3000..."
-              sudo docker stop $CONTAINERS_USING_PORT
-              sudo docker rm $CONTAINERS_USING_PORT
-            fi
-
-            echo "Checking for existing container..."
-            if sudo docker ps -a --format '{{.Names}}' | grep -q "^$REPO_NAME$"; then
-              echo "Stopping and removing container: $REPO_NAME"
-              sudo docker stop $REPO_NAME || echo "Failed to stop container"
-              sudo docker rm $REPO_NAME || echo "Failed to remove container"
-            else
-              echo "Container $REPO_NAME does not exist, skipping stop/remove."
-            fi
-
-            echo "Removing old images for $REPO_NAME..."
-            sudo docker images -q ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME | sort -u | xargs --no-run-if-empty sudo docker rmi -f || echo "No old images to remove or removal failed"
-
-            echo "Cleaning up unused images..."
-            sudo docker image prune -f || echo "Failed to prune unused images"
-
-            echo "Waiting for cleanup to settle..."
-            sleep 5
-
-            echo "Pulling new image..."
-            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
-            
-            echo "Starting new container..."
-            sudo docker run -d --name $REPO_NAME \
-              --restart=unless-stopped \
-              -p 3000:3000 \
-              -v ~/.env:/app/.env \
-              ${{ secrets.DOCKER_HUB_USERNAME }}/$REPO_NAME:latest
-
-            echo "Verifying container status..."
-            if ! sudo docker ps | grep -q "$REPO_NAME"; then
-              echo "Container failed to start"
-              sudo docker logs $REPO_NAME
-              exit 1
-            fi
-
-            echo "Container successfully started"
-            sudo docker ps | grep "$REPO_NAME"
+            echo "部署完成！"
+            sudo docker-compose ps
