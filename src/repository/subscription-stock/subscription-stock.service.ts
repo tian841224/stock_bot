@@ -35,7 +35,7 @@ export class SubscriptionStockService {
   }
 
   async findBySubscriptionId(subscriptionId: number): Promise<SubscriptionStock[]> {
-    return await this.prisma.subscriptionStock.findMany({ where: { id: subscriptionId } });
+    return await this.prisma.subscriptionStock.findMany({ where: { subscriptionId: subscriptionId } });
   }
 
   async findBySubscriptionIdAndStock(subscriptionId: number, stock: string): Promise<SubscriptionStock> {
