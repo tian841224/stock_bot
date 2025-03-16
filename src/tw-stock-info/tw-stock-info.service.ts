@@ -7,7 +7,6 @@ import { AfterTradingVolumeResponseDto } from './interface/after-trading-volume-
 import { DailyMarketInfoResponseDto } from './interface/daily-market-Info-response-dto';
 import { ConfigService } from '@nestjs/config';
 
-
 @Injectable()
 export class TwStockInfoService {
     private readonly logger = new Logger(TwStockInfoService.name);
@@ -56,6 +55,7 @@ export class TwStockInfoService {
         }
     }
 
+    // TODO: 增加查詢指定日期
     // 盤後資訊
     async getAfterTradingVolumeAsync(symbol: string): Promise<AfterTradingVolumeResponseDto> {
         try {
@@ -368,10 +368,22 @@ export class TwStockInfoService {
 
             // 處理 cookie 提示
             this.logger.log('處理 cookie 提示');
-            const cookieButton = await page.waitForSelector("#__next > div._1GCLL > div > button._122qv", { timeout: 5000 });
-            if (cookieButton) {
-                await cookieButton.click();
-            }
+            // 移除特定元素
+            await page.evaluate(() => {
+                // 移除 class="_1GCLL" 且 style 包含 "z-index: 100" 的 div
+                const elements = document.querySelectorAll('div._1GCLL');
+                elements.forEach(el => {
+                    const style = el.getAttribute('style');
+                    if (style && style.includes('z-index: 100')) {
+                        el.remove(); // 直接移除元素
+                    }
+                });
+            });
+
+            // const cookieButton = await page.waitForSelector("#__next > div._1GCLL > div > button._122qv", { timeout: 5000 });
+            // if (cookieButton) {
+            //     await cookieButton.click();
+            // }
 
             // 滾動頁面到底部
             this.logger.log('滾動頁面到底部');

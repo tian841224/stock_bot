@@ -8,7 +8,6 @@ import { UpdateSubscriptionDto } from './subscription/dto/update-subscription.dt
 import { CreateSubscriptionStockDto } from './subscription-stock/dto/create-subscription-stock.dto';
 import { Subscription, SubscriptionItem, SubscriptionStock, User, UserType } from '@prisma/client';
 
-// TODO : 查詢使用者訂閱股票代號是否存在
 @Injectable()
 export class RepositoryService {
   private readonly logger = new Logger(RepositoryService.name);
@@ -27,7 +26,7 @@ export class RepositoryService {
   }
 
   async getUserSubscriptionStockListAsync(userId: string,): Promise<SubscriptionStock[]> {
-    const subscription = await this.subscriptionService.findByUserIdAndItem(userId, SubscriptionItem.STOCK_INFO,);
+    const subscription = await this.subscriptionService.findByUserIdAndItem(userId, SubscriptionItem.STOCK_INFO);
     if (!subscription) {
       return [];
     }
@@ -129,6 +128,9 @@ export class RepositoryService {
       }
       // 取得使用者訂閱股票
       var userSubscriptionStock = await this.findUserSubscriptionStockAsync(userId, stock);
+      if(userSubscriptionStock == null){
+        return;
+      }
       await this.subscriptionStockService.remove(userSubscriptionStock.id);
       this.logger.log(`deleteUserSubscriptionStockAsync:更新使用者股票訂閱, userId: ${userId}`);
       return true;

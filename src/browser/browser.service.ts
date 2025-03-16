@@ -30,10 +30,10 @@ export class BrowserService {
   async closePage() {
     if (this.page || !this.page.isClosed()) {
       await this.page.close();
-      if (this.page && !this.page.isClosed()) {
-        await this.page.close();
-        this.logger.log('Page已關閉');
-      }
+    }
+
+    if (!this.page && this.page.isClosed()) {
+      this.logger.log('Page已關閉');
     }
   }
 
@@ -90,24 +90,13 @@ export class BrowserService {
 
     this.page = await this.browser.newPage();
     await this.page.setViewport({ width: 1920, height: 1080 });
-    
-     // 設定請求攔截
-     this.logger.log('設定請求攔截');
-     await this.page.setRequestInterception(true);
-     this.page.on('request', request => {
-       // 檢查是否包含任何要排除的模式
-       const shouldBlock = this.ignoredPatterns.some(pattern =>
-         request.url().includes(pattern)
-       );
- 
-       if (shouldBlock) {
-         request.abort();
-       } else {
-         request.continue();
-       }
-     });
 
-    // this.setupPageEventListeners(); // 添加頁面事件監聽
+    // 設定請求攔截
+    this.logger.log('設定請求攔截');
+    await this.page.setRequestInterception(true);
+
+    // 頁面事件監聽
+    this.setupPageEventListeners();
     this.logger.log('Page初始化成功');
   }
 
@@ -132,36 +121,50 @@ export class BrowserService {
     // });
   }
 
-  // private setupPageEventListeners(): void {
-  //   if (!this.page) return;
+  private setupPageEventListeners(): void {
+    if (!this.page) return;
 
-  //   // 頁面錯誤
-  //   this.page.on('error', (error) => {
-  //     this.logger.error('頁面崩潰', error);
-  //   });
+    // 頁面請求
+    this.page.on('request', request => {
+      // 檢查是否包含任何要排除的模式
+      const shouldBlock = this.ignoredPatterns.some(pattern =>
+        request.url().includes(pattern)
+      );
 
-  //   // 控制台訊息
-  //   this.page.on('console', (msg) => {
-  //     const type = msg.type();
-  //     const text = msg.text();
-  //     if (type === 'error') {
-  //       this.logger.error(`頁面控制台錯誤: ${text}`);
-  //     } else if (type === 'warn') {
-  //       this.logger.warn(`頁面控制台警告: ${text}`);
-  //     } else {
-  //       this.logger.debug(`頁面控制台訊息[${type}]: ${text}`);
-  //     }
-  //   });
+      if (shouldBlock) {
+        request.abort();
+      } else {
+        request.continue();
+      }
+    });
 
-  //   // 請求失敗
-  //   this.page.on('requestfailed', (request) => {
-  //     this.logger.warn(`請求失敗: ${request.url()} - ${request.failure()?.errorText}`);
-  //   });
+    // // 頁面錯誤
+    // this.page.on('error', (error) => {
+    //   this.logger.error('頁面崩潰', error);
+    // });
 
-  //   // 頁面關閉時
-  //   this.page.on('close', () => {
-  //     this.logger.log('頁面已關閉');
-  //     this.page = null;
-  //   });
-  // }
+    // // 控制台訊息
+    // this.page.on('console', (msg) => {
+    //   const type = msg.type();
+    //   const text = msg.text();
+    //   if (type === 'error') {
+    //     this.logger.error(`頁面控制台錯誤: ${text}`);
+    //   } else if (type === 'warn') {
+    //     this.logger.warn(`頁面控制台警告: ${text}`);
+    //   } else {
+    //     this.logger.debug(`頁面控制台訊息[${type}]: ${text}`);
+    //   }
+    // });
+
+    // // 請求失敗
+    // this.page.on('requestfailed', (request) => {
+    //   this.logger.warn(`請求失敗: ${request.url()} - ${request.failure()?.errorText}`);
+    // });
+
+    // // 頁面關閉時
+    // this.page.on('close', () => {
+    //   this.logger.log('頁面已關閉');
+    //   this.page = null;
+    // });
+  }
 }

@@ -63,6 +63,9 @@ export class TgBotService {
 - /sub 3 - 訂閱 當日市場成交行情
 - /sub 4 - 訂閱 當日交易量前20名
 
+查詢指令
+- /list - 查詢已訂閱功能及股票
+
 (取消訂閱 unsub + 代號)`;
 
         await this.tgBot.sendMessage(userId, text);
@@ -307,7 +310,6 @@ export class TgBotService {
     }
 
     async getAfterTradingVolumeAsync(userId: number, symbol: string) {
-
         try {
             if (symbol == null) {
                 this.logger.log(`getAfterTradingVolumeAsync:未輸入股票代號`);
@@ -339,6 +341,68 @@ export class TgBotService {
             await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
         } catch (error) {
             this.logger.error(error, 'getAfterTradingVolumeAsync');
+            await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
+        }
+    }
+
+    // 取得使用者訂閱項目
+    private async getUserSubscriptionAsync(userId: number) {
+        try {
+            // 取得使用者 
+            const user = await this.repositoryService.getUserAsync(userId.toString(), UserType.TELEGRAM);
+            if (user == null) {
+                await this.tgBot.sendMessage(userId, '無法取得使用者');
+                return;
+            }
+
+            // 取得使用者訂閱項目
+            const userSubList = await this.repositoryService.getUserSubscriptionListAsync(userId.toString());
+
+            // 取得使用者訂閱股票
+            const userSubStock = await this.repositoryService.getUserSubscriptionStockListAsync(userId.toString());
+
+            // 組合訊息
+            let messageText = '📋 <b>您目前的訂閱項目</b>\n\n';
+
+            // 訂閱功能清單
+            messageText += '🔔 <b>已訂閱功能：</b>\n';
+            if (userSubList && userSubList.length > 0) {
+                userSubList.forEach(sub => {
+                    let subscriptionName: string;
+                    switch (sub.item) {
+                        case SubscriptionItem.STOCK_INFO:
+                            subscriptionName = '股票資訊';
+                            break;
+                        case SubscriptionItem.STOCK_NEWS:
+                            subscriptionName = '股票新聞';
+                            break;
+                        case SubscriptionItem.DAILY_MARKET_INFO:
+                            subscriptionName = '市場成交行情';
+                            break;
+                        case SubscriptionItem.TOP_VOLUME_ITEMS:
+                            subscriptionName = '交易量前20名';
+                            break;
+                    }
+                    messageText += `• ${subscriptionName}\n`;
+                });
+            } else {
+                messageText += '• 尚未訂閱任何功能\n';
+            }
+
+            // 訂閱股票清單
+            messageText += '\n📈 <b>已訂閱股票：</b>\n';
+            if (userSubStock && userSubStock.length > 0) {
+                userSubStock.forEach(stock => {
+                    messageText += `• ${stock.stock}\n`;
+                });
+            } else {
+                messageText += '• 尚未訂閱任何股票\n';
+            }
+
+            // 發送訊息
+            await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
+        } catch (error) {
+            this.logger.error(error, 'getUserSubscriptionAsync');
             await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
         }
     }
@@ -375,7 +439,7 @@ export class TgBotService {
             }
 
             await this.repositoryService.addUserSubscriptionItemAsync(userId.toString(), subscription);
-            await this.tgBot.sendMessage(userId, `取消訂閱成功 : ${subscriptionName}`);
+            await this.tgBot.sendMessage(userId, `訂閱成功 : ${subscriptionName}`);
         } catch (error) {
             this.logger.error(error, 'addUserSubscription');
             await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
@@ -422,12 +486,20 @@ export class TgBotService {
                     break;
             }
 
-            if (status === 0) {
-                await this.tgBot.sendMessage(userId, `取消訂閱成功 : ${subscriptionName}`);
-            } else {
-                await this.tgBot.sendMessage(userId, `訂閱成功 : ${subscriptionName}`);
+            if (userSubItem.status != status) {
+                if (status === 0) {
+                    await this.tgBot.sendMessage(userId, `取消訂閱成功 : ${subscriptionName}`);
+                } else if (status === 1) {
+                    await this.tgBot.sendMessage(userId, `訂閱成功 : ${subscriptionName}`);
+                }
             }
-
+            else {
+                if (status === 0) {
+                    await this.tgBot.sendMessage(userId, `未訂閱此項目 : ${subscriptionName}`);
+                } else if (status === 1) {
+                    await this.tgBot.sendMessage(userId, `已訂閱 : ${subscriptionName}`);
+                }
+            }
         } catch (error) {
             this.logger.error(error, 'updateUserSubscription');
             await this.tgBot.sendMessage(userId, `發生錯誤，請聯繫作者`);
@@ -457,7 +529,11 @@ export class TgBotService {
 
     private async deleteSubscriptionStockAsync(userId: number, str: string) {
         try {
-            await this.repositoryService.deleteUserSubscriptionStockAsync(userId.toString(), str);
+            const result = await this.repositoryService.deleteUserSubscriptionStockAsync(userId.toString(), str);
+            if(!result){
+                await this.tgBot.sendMessage(userId, '取消訂閱失敗，請檢查是否已訂閱');
+                return;
+            }
             await this.tgBot.sendMessage(userId, '取消訂閱成功');
         } catch (error) {
             this.logger.error(error);
@@ -516,6 +592,10 @@ export class TgBotService {
                 break;
             case '/del':
                 await this.deleteSubscriptionStockAsync(userId, command1);
+                break;
+            case '/list':
+                await this.getUserSubscriptionAsync(userId);
+                break;
             default:
                 break;
         }
