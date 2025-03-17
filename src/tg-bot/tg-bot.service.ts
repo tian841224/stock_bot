@@ -56,9 +56,7 @@ export class TgBotService {
 訂閱股票資訊
 - /add [股票代碼] - 訂閱 股票
 - /del [股票代碼] - 取消訂閱 股票
-- /sub 1 - 訂閱 當日個股資訊on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+- /sub 1 - 訂閱 當日個股資訊
 - /sub 2 - 訂閱 觀察清單新聞
 - /sub 3 - 訂閱 當日市場成交行情
 - /sub 4 - 訂閱 當日交易量前20名
