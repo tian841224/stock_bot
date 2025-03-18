@@ -47,7 +47,7 @@ export class TgBotService {
 - /p [股票代碼] - 查詢股票績效
 - /n [股票代碼] - 查詢股票新聞
 - /yn [股票代碼] - 查詢Yahoo股票新聞（預設：台股新聞）
-- /i [股票代碼] - 查詢當日收盤資訊
+- /i [股票代碼] - 查詢當日收盤資訊 (可指定日期 ex: /i 2330 20250101)
 
 市場總覽指令
 - /m - 查詢大盤資訊
@@ -307,7 +307,7 @@ export class TgBotService {
         }
     }
 
-    async getAfterTradingVolumeAsync(userId: number, symbol: string) {
+    async getAfterTradingVolumeAsync(userId: number, symbol: string, date?: string) {
         try {
             if (symbol == null) {
                 this.logger.log(`getAfterTradingVolumeAsync:未輸入股票代號`);
@@ -315,7 +315,7 @@ export class TgBotService {
                 return;
             }
 
-            let result = await this.twStockInfoService.getAfterTradingVolumeAsync(symbol);
+            let result = await this.twStockInfoService.getAfterTradingVolumeAsync(symbol, date);
             if (result == null) {
                 this.logger.log(`getAfterTradingVolumeAsync:查無資料`);
                 await this.tgBot.sendMessage(userId, '查無資料,請確認後再試');
@@ -325,15 +325,24 @@ export class TgBotService {
             const emoji = result.upDownSign === '+' ? '📈' : result.upDownSign === '-' ? '📉' : '';
 
             let messageText = '';
-            messageText += `<b>${result.stockName} (${result.stockId})</b>${emoji}<code>\n`;
-            messageText += `成交股數：${result.volume}\n`;
-            messageText += `成交筆數：${result.transaction}\n`;
-            messageText += `成交金額：${result.amount}\n`;
+            messageText += `<b>${date ? 
+                `${date.slice(0, 4)}/${date.slice(4, 6)}/${date.slice(6, 8)}` : 
+                new Date().toLocaleDateString('zh-TW', {
+                    year: 'numeric',
+                    month: '2-digit', 
+                    day: '2-digit'
+                }).replace(/\//g, '-')
+            }</b>\n`;
+            messageText += `<b>─── ${result.stockName} (${result.stockId}) ${emoji} ───</b>\n`;
+            messageText += `<code>`;
             messageText += `開盤價：${result.openPrice}\n`;
             messageText += `收盤價：${result.closePrice}\n`;
             messageText += `漲跌幅：${result.upDownSign}${result.changeAmount} (${result.percentageChange})\n`;
             messageText += `最高價：${result.highPrice}\n`;
             messageText += `最低價：${result.lowPrice}\n`;
+            messageText += `成交股數：${result.volume}\n`;
+            messageText += `成交筆數：${result.transaction}\n`;
+            messageText += `成交金額：${result.amount}\n`;
             messageText += `</code>`;
 
             await this.tgBot.sendMessage(userId, messageText, { parse_mode: 'HTML' });
@@ -585,7 +594,7 @@ export class TgBotService {
                 await this.getTopVolumeItemsAsync(userId);
                 break;
             case '/i':
-                await this.getAfterTradingVolumeAsync(userId, command1);
+                await this.getAfterTradingVolumeAsync(userId, command1, command2);
                 break;
             case '/sub':
                 await this.updateUserSubscriptionAsync(userId, command1, 1);
