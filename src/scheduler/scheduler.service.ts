@@ -19,7 +19,7 @@ export class SchedulerService {
         private prisma: PrismaService
     ) { }
 
-    @Cron(process.env.CRON_SCHEDULE || '0 0 15 * * 1-5')
+    @Cron(process.env.CRON_SCHEDULE || '0 0 7 * * 1-5')
     private async scheduleStockInfoPush() {
         try {
             this.logger.log('定時任務啟動');

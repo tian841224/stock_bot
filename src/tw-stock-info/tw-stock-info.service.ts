@@ -55,13 +55,11 @@ export class TwStockInfoService {
         }
     }
 
-    // TODO: 增加查詢指定日期
     // 盤後資訊
-    async getAfterTradingVolumeAsync(symbol: string): Promise<AfterTradingVolumeResponseDto> {
+    async getAfterTradingVolumeAsync(symbol: string, date?: string): Promise<AfterTradingVolumeResponseDto> {
         try {
             // 轉換日期格式
-            const date = this.getTradeDate();
-            const url = this.twseUrl + `/afterTrading/MI_INDEX?date=${date}&type=ALLBUT0999`
+            const url = this.twseUrl + `/afterTrading/MI_INDEX${date ? `?date=${date}` : ''}${date ? '&' : '?'}type=ALLBUT0999`
 
             //印出請求網址
             axios.interceptors.request.use(request => {
