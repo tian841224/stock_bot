@@ -512,11 +512,19 @@ export class TgBotService {
                 return;
             }
 
+            // 搜尋是否有此股票代號
+            const stock = await this.twStockInfoService.getAfterTradingVolumeAsync(str);
+            if (!stock) {
+                await this.tgBot.sendMessage(userId, '無此股票代號，請重新確認');
+                return;
+            }
+
             const result = await this.repositoryService.addUserSubscriptionStockAsync(userId.toString(), str);
             if (result === false) {
                 await this.tgBot.sendMessage(userId, '已訂閱過此股票');
                 return;
             }
+
             await this.tgBot.sendMessage(userId, '訂閱成功');
 
         } catch (error) {
@@ -528,7 +536,7 @@ export class TgBotService {
     private async deleteSubscriptionStockAsync(userId: number, str: string) {
         try {
             const result = await this.repositoryService.deleteUserSubscriptionStockAsync(userId.toString(), str);
-            if(!result){
+            if (!result) {
                 await this.tgBot.sendMessage(userId, '取消訂閱失敗，請檢查是否已訂閱');
                 return;
             }
