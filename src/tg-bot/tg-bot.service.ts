@@ -566,6 +566,9 @@ export class TgBotService {
     private async handleCommand(message: Message.TextMessage) {
         const messageText = message.text;
         const userId = message.chat.id;
+
+        this.logger.log(`${userId}: ${messageText}`);
+
         const command1 = messageText.split(' ')[1];
         const command2 = messageText.split(' ')[2];
         switch (messageText.split(' ')[0]) {
