@@ -22,11 +22,6 @@ export class LineBotService {
     if (event.type !== 'message' || event.message.type !== 'text') {
       return null;
     }
-    /* 
-    * TODO: 
-    * 1. 回傳訊息排版
-    * 2. 傳送圖片相關功能尚未完成
-    */
 
     this.logger.log(event.message.text);
 
@@ -521,7 +516,6 @@ export class LineBotService {
   private formatTopTenToFlexMessage(stockData: TopVolumeItemsResponseDto[]): FlexMessage {
     try {
       const topTen = stockData.slice(0, 10);
-      console.log(topTen);
       return {
         type: 'flex',
         altText: '今日交易量前十名',
