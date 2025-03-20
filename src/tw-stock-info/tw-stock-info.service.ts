@@ -168,7 +168,7 @@ export class TwStockInfoService {
 
             //印出請求網址
             axios.interceptors.request.use(request => {
-                this.logger.log('getTopVolumeItemsAsync URL:', `${request.url}`);
+                this.logger.log('getStockNewsAsync URL:', `${request.url}`);
                 return request;
             });
 
@@ -427,7 +427,7 @@ export class TwStockInfoService {
             await this.browserService.closePage();
             return result;
         } catch (error) {
-            this.logger.error(error, 'getDetailPriceAsync');
+            this.logger.error(error, 'getPerformanceAsync');
             this.browserService.dispose();
             throw error;
         }
