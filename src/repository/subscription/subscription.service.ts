@@ -25,23 +25,23 @@ export class SubscriptionService {
   }
 
   async findAll(): Promise<Subscription[]> {
-    return await this.prisma.subscription.findMany();
+    return await this.prisma.subscription.findMany({ where: { status: 1 } });
   }
 
   async findOne(id: number): Promise<Subscription> {
-    return await this.prisma.subscription.findUnique({ where: { id } });
+    return await this.prisma.subscription.findUnique({ where: { id, status: 1 } });
   }
 
   async findByUserId(userId: string): Promise<Subscription[]> {
-    return await this.prisma.subscription.findMany({ where: { userId } });
+    return await this.prisma.subscription.findMany({ where: { userId, status: 1 } });
   }
 
   async findByItem(item: SubscriptionItem): Promise<Subscription[]> {
-    return await this.prisma.subscription.findMany({ where: { item } });
+    return await this.prisma.subscription.findMany({ where: { item, status: 1 } });
   }
 
   async findByUserIdAndItem(userId: string, item: SubscriptionItem): Promise<Subscription> {
-    return await this.prisma.subscription.findUnique({ where: { userId_item: { userId, item } } });
+    return await this.prisma.subscription.findFirst({ where: { userId, item, status: 1 } });
   }
 
   async update(id: number, updateSubscriptionDto: UpdateSubscriptionDto) {
@@ -55,7 +55,7 @@ export class SubscriptionService {
 
   async remove(id: number): Promise<boolean> {
     try {
-      await this.prisma.subscription.delete({where: { id }});
+      await this.prisma.subscription.delete({ where: { id } });
       return true;
     } catch (e) {
       this.logger.error(e);

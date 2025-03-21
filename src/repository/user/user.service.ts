@@ -23,15 +23,15 @@ export class UserService {
   }
 
   async findAll(): Promise<User[]> {
-    return await this.prisma.user.findMany();
+    return await this.prisma.user.findMany({ where: { status: 1 } });
   }
 
   async findOne(id: number): Promise<User> {
-    return await this.prisma.user.findUnique({ where: { id: id } });
+    return await this.prisma.user.findUnique({ where: { id: id, status: 1 } });
   }
 
   async findByUserId(userId: string): Promise<User> {
-    return await this.prisma.user.findUnique({ where: { userid: userId } });
+    return await this.prisma.user.findUnique({ where: { userid: userId, status: 1 } });
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<boolean> {
