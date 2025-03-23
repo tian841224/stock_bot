@@ -1,7 +1,7 @@
 {
   "name": "stock-bot",
-  "version": "v20250308",
-  "description": "此機器人為支援Line及TG Bot查詢台美股票相關資訊的機器人",
+  "version": "v2025016",
+  "description": "一個基於 Telegram 及 Line 平台的台股資訊查詢機器人，提供即時股價、K線圖表、新聞、訂閱股票資訊等功能。",
   "author": "Tian",
   "private": true,
   "license": "UNLICENSED",
