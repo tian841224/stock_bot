@@ -1,99 +1,94 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 台股查詢機器人 🤖
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+一個基於 Telegram 及 Line 平台的台股資訊查詢機器人，提供即時股價、K線圖表、新聞、訂閱股票資訊等功能。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 💻 Demo (架設於免費平台，功能可能不完整)
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ npm install
+```cmd
+https://t.me/Tian_Stock_bot
 ```
 
-## Compile and run the project
+## 🚀 快速開始
 
-```bash
-# development
-$ npm run start
+### 使用步驟
+1. Clone 專案
+2. 設定 `.env.example` 中的參數，並將檔名改為`.env`
+3. 在`docker-compose`目錄底下執行指令 `docker compose up` (本機需先安裝 🐳 docker)
+4. 開始使用 !
 
-# watch mode
-$ npm run start:dev
+## 💡 功能特色
 
-# production mode
-$ npm run start:prod
-```
+### 🔑 核心功能
+- 即時股價查詢
+- 技術分析圖表
+- 個股新聞追蹤
+- 績效資訊查看
+- 多時間週期K線圖
+- 定時推播股票資訊
 
-## Run tests
+### 🛠️ 採用技術
+- ⚡  Nest.js + Postgre SQL
+- 🤖 整合 Telegram 及 Line Bot 多平台支援
+- 🕷️ Puppeteer 爬蟲技術
+- 🐳 Docker 容器化部署
+- 🔄 GitHub Actions CI/CD 自動部屬
+- ☁️ AWS EC2 雲端平台
 
-```bash
-# unit tests
-$ npm run test
+### 🛡️ 額外技術
+- 健康檢查機制 (HealthChecks)
+- 回應壓縮 (Response Compression)
 
-# e2e tests
-$ npm run test:e2e
+## 🔧 系統架構
 
-# test coverage
-$ npm run test:cov
-```
+<img src="readme/images/stock-bot-diagram.png" alt="系統架構圖" height="916" width="1537">
 
-## Deployment
+## 📖 使用指南
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+  *K線圖表指令*
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+  *📊 基本K線圖*
+  格式：`/k [股票代碼] [時間範圍]`
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+  時間範圍選項（預設：d）：
+  - `h` - 時K線
+  - `d` - 日K線 
+  - `w` - 週K線
+  - `m` - 月K線
+  - `5m` - 5分K線
+  - `15m` - 15分K線
+  - `30m` - 30分K線
+  - `60m` - 60分K線
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+  *股票資訊指令*
+  - `/d [股票代碼]` - 查詢股票詳細資訊
+  - `/p [股票代碼]` - 查詢股票績效
+  - `/n [股票代碼]` - 查詢股票新聞
+  - `/yn [股票代碼]` - 查詢Yahoo股票新聞（預設：台股新聞）
+  - `/i [股票代碼]` - 查詢當日收盤資訊
 
-## Resources
+  *市場總覽指令*
+  - `/m` - 查詢大盤資訊
+  - `/t` - 查詢當日交易量前20名
 
-Check out a few resources that may come in handy when working with NestJS:
+  *訂閱股票資訊*
+  - `/add [股票代碼]` - 訂閱 股票
+  - `/del [股票代碼]` - 取消訂閱 股票
+  - `/sub 1` - 訂閱 當日個股資訊
+  - `/sub 2` - 訂閱 觀察清單新聞
+  - `/sub 3` - 訂閱 當日市場成交行情
+  - `/sub 4` - 訂閱 當日交易量前20名
+  -  (取消訂閱 unsub + 代號)
+  - `/list ` - 查詢已訂閱功能及股票
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 🚨 已知問題
+- Tell me
 
-## Support
+## 📝 開發計劃
+- [ ] 股價到價通知
+- [ ] 新增美股市場
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 🤝 貢獻指南
+歡迎提交 Issue 和 Pull Request 來協助改善專案！
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 專案狀態
+![Alt](https://repobeats.axiom.co/api/embed/97e056d4e43fb413e080273a960ad80145d8abf2.svg "Repobeats analytics image")
