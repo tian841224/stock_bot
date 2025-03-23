@@ -40,7 +40,7 @@ https://t.me/Tian_Stock_bot
 
 ## 🔧 系統架構
 
-<img src="readme/images/stock-bot-diagram.png" alt="系統架構圖" height="916" width="1537">
+<img src="readme/images/stock-bot-diagram.png" alt="系統架構圖" height="596" width="1000">
 
 ## 📖 使用指南
 
