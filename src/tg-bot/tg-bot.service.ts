@@ -564,6 +564,7 @@ export class TgBotService {
     }
 
     private async handleCommand(message: Message.TextMessage) {
+        if(message.text == null || message.text == undefined) return;
         const messageText = message.text;
         const userId = message.chat.id;
 
