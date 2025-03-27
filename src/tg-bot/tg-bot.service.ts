@@ -325,14 +325,14 @@ export class TgBotService {
             const emoji = result.upDownSign === '+' ? '📈' : result.upDownSign === '-' ? '📉' : '';
 
             let messageText = '';
-            messageText += `<b>${date ? 
-                `${date.slice(0, 4)}/${date.slice(4, 6)}/${date.slice(6, 8)}` : 
+            messageText += `<b>${date ?
+                `${date.slice(0, 4)}/${date.slice(4, 6)}/${date.slice(6, 8)}` :
                 new Date().toLocaleDateString('zh-TW', {
                     year: 'numeric',
-                    month: '2-digit', 
+                    month: '2-digit',
                     day: '2-digit'
                 }).replace(/\//g, '-')
-            }</b>\n`;
+                }</b>\n`;
             messageText += `<b>─── ${result.stockName} (${result.stockId}) ${emoji} ───</b>\n`;
             messageText += `<code>`;
             messageText += `開盤價：${result.openPrice}\n`;
@@ -569,9 +569,12 @@ export class TgBotService {
 
         this.logger.log(`${userId}: ${messageText}`);
 
-        const command1 = messageText.split(' ')[1];
-        const command2 = messageText.split(' ')[2];
-        switch (messageText.split(' ')[0]) {
+        const parts = messageText.split(' ');
+        const command = parts[0] || '';
+        const command1 = parts[1] || '';
+        const command2 = parts[2] || '';
+
+        switch (command) {
             case '/start':
                 this.start(userId);
                 break;
