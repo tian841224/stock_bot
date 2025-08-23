@@ -146,6 +146,7 @@ export class RepositoryService {
       let user = await this.userService.findByUserId(userId);
       if (user == null) {
         await this.addUserAsync(userId, type);
+        user = await this.userService.findByUserId(userId);
       }
       return user;
     } catch (e) {
