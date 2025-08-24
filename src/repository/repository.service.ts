@@ -51,8 +51,13 @@ export class RepositoryService {
       // 取得使用者訂閱列表
       var userSubscription = await this.getUserSubscriptionByItemAsync(userId, item);
       if (userSubscription != null) {
-        // 若已存在更新訂閱狀態為啟用
-        await this.updateUserSubscriptionItemAsync(userId, item, 1);
+        // 若已存在且狀態不是啟用，則更新狀態為啟用
+        if (userSubscription.status !== 1) {
+          const updateSubscriptionDto = new UpdateSubscriptionDto();
+          updateSubscriptionDto.status = 1;
+          await this.subscriptionService.update(userSubscription.id, updateSubscriptionDto);
+          this.logger.log(`addUserSubscriptionItemAsync:更新訂閱項目狀態為啟用, userId: ${userId}`);
+        }
         return true;
       }
       // 新增訂閱
@@ -63,6 +68,11 @@ export class RepositoryService {
       this.logger.log(`addUserSubscriptionItemAsync:新增訂閱項目成功, userId: ${userId}`,);
       return true;
     } catch (e) {
+      // 處理唯一約束錯誤
+      if (e.code === 'P2002' && e.meta?.target?.includes('userId') && e.meta?.target?.includes('item')) {
+        this.logger.log(`addUserSubscriptionItemAsync:訂閱項目已存在, userId: ${userId}`);
+        return true;
+      }
       this.logger.error(`addUserSubscriptionItem`, e);
       throw e;
     }
