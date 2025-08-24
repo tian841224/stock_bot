@@ -51,7 +51,9 @@ export class RepositoryService {
       // 取得使用者訂閱列表
       var userSubscription = await this.getUserSubscriptionByItemAsync(userId, item);
       if (userSubscription != null) {
-        return;
+        // 若已存在更新訂閱狀態為啟用
+        await this.updateUserSubscriptionItemAsync(userId, item, 1);
+        return true;
       }
       // 新增訂閱
       const createSubscriptionDto = new CreateSubscriptionDto();
@@ -98,6 +100,14 @@ export class RepositoryService {
         userSubscription = await this.getUserSubscriptionByItemAsync(userId, SubscriptionItem.STOCK_INFO);
       }
 
+      // 判斷是否已訂閱
+      var userSubscriptionStock = await this.findUserSubscriptionStockAsync(userId, stock);
+      if (userSubscriptionStock != null) {
+        // 若已存在更新訂閱狀態為啟用
+        await this.updateUserSubscriptionItemAsync(userId, SubscriptionItem.STOCK_INFO, 1);
+        return true;
+      }
+
       // 新增訂閱
       const createSubscriptionStockDto = new CreateSubscriptionStockDto();
       createSubscriptionStockDto.subscriptionId = userSubscription.id;
@@ -118,7 +128,7 @@ export class RepositoryService {
     }
   }
 
-  // 更新使用者股票訂閱
+  // 刪除使用者股票訂閱
   async deleteUserSubscriptionStockAsync(userId: string, stock: string,): Promise<boolean> {
     try {
       // 取得使用者訂閱列表
