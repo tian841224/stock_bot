@@ -37,10 +37,13 @@ export class RepositoryService {
 
   async findUserSubscriptionStockAsync(userId: string, stock: string,): Promise<SubscriptionStock> {
     const subscription = await this.subscriptionService.findByUserIdAndItem(userId, SubscriptionItem.STOCK_INFO);
+    if (!subscription) {
+      return null;
+    }
     const subscriptionStock =
       await this.subscriptionStockService.findBySubscriptionIdAndStock(subscription.id, stock);
     if (!subscriptionStock) {
-      return;
+      return null;
     }
     return subscriptionStock;
   }
@@ -84,8 +87,16 @@ export class RepositoryService {
       // 取得使用者訂閱列表
       var userSubscription = await this.getUserSubscriptionByItemAsync(userId, item);
       if (userSubscription == null) {
-        this.addUserSubscriptionItemAsync(userId, item);
+        await this.addUserSubscriptionItemAsync(userId, item);
+        userSubscription = await this.getUserSubscriptionByItemAsync(userId, item);
       }
+      
+      // 確保 userSubscription 不為 null
+      if (userSubscription == null) {
+        this.logger.error(`updateUserSubscriptionItemAsync: 無法取得或建立訂閱項目, userId: ${userId}, item: ${item}`);
+        return false;
+      }
+      
       // 更新訂閱
       const updateSubscriptionDto = new UpdateSubscriptionDto();
       updateSubscriptionDto.status = status;
