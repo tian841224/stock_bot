@@ -27,23 +27,23 @@ export class SubscriptionStockService {
   }
 
   async findAll(): Promise<SubscriptionStock[]> {
-    return await this.prisma.subscriptionStock.findMany({ where: { status: 1 } });
+    return await this.prisma.subscriptionStock.findMany();
   }
 
   async findOne(id: number): Promise<SubscriptionStock> {
-    return await this.prisma.subscriptionStock.findUnique({ where: { id, status: 1 } });
+    return await this.prisma.subscriptionStock.findUnique({ where: { id } });
   }
 
   async findBySubscriptionId(subscriptionId: number): Promise<SubscriptionStock[]> {
-    return await this.prisma.subscriptionStock.findMany({ where: { subscriptionId: subscriptionId, status: 1 } });
+    return await this.prisma.subscriptionStock.findMany({ where: { subscriptionId } });
   }
 
   async findBySubscriptionIdAndStock(subscriptionId: number, stock: string): Promise<SubscriptionStock> {
-    return await this.prisma.subscriptionStock.findFirst({ where: { subscriptionId, stock, status: 1 } });
+    return await this.prisma.subscriptionStock.findFirst({ where: { subscriptionId, stock } });
   }
 
   async findByUserIdAndStock(userId: string, stock: string): Promise<SubscriptionStock | null> {
-    return await this.prisma.subscriptionStock.findFirst({ where: { stock: stock, subscription: { userId: userId, status: 1 }, status: 1 } });
+    return await this.prisma.subscriptionStock.findFirst({ where: { stock: stock, subscription: { userId: userId } } });
   }
 
   async update(id: number, updateSubscriptionStockDto: UpdateSubscriptionStockDto) {
