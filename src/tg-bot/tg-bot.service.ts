@@ -363,10 +363,12 @@ export class TgBotService {
             }
 
             // 取得使用者訂閱項目
-            const userSubList = await this.repositoryService.getUserSubscriptionListAsync(userId.toString());
-
+            let userSubList = await this.repositoryService.getUserSubscriptionListAsync(userId.toString());
+            userSubList = userSubList.filter(sub => sub.status === 1);
+            
             // 取得使用者訂閱股票
-            const userSubStock = await this.repositoryService.getUserSubscriptionStockListAsync(userId.toString());
+            let userSubStock = await this.repositoryService.getUserSubscriptionStockListAsync(userId.toString());
+            userSubStock = userSubStock.filter(sub => sub.status === 1);
 
             // 組合訊息
             let messageText = '📋 <b>您目前的訂閱項目</b>\n\n';
