@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import * as compression from 'compression';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -13,6 +15,10 @@ async function bootstrap() {
 
   const environment = process.env.NODE_ENV;
   Logger.log(`目前環境：${environment}`);
+  
+  // 設定全域異常過濾器
+  const configService = app.get(ConfigService);
+  app.useGlobalFilters(new GlobalExceptionFilter(configService));
   
   // app.use(multer().any());
   app.use(compression());  // 啟用壓縮
