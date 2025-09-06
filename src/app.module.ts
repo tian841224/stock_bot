@@ -15,6 +15,7 @@ import { SubscriptionModule } from './repository/subscription/subscription.modul
 import { SubscriptionStockModule } from './repository/subscription-stock/subscription-stock.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PrismaModule } from './prisma/prisma.module';
         : '.env', // 沒有設定時，讀取預設的 .env 檔案
       isGlobal: true, // 全域使用
     }),
+    CommonModule,
     BrowserModule,
     LineBotModule,
     TgBotModule,
