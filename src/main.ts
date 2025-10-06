@@ -23,8 +23,8 @@ async function bootstrap() {
   // app.use(multer().any());
   app.use(compression());  // 啟用壓縮
 
-  // 設定全域前綴
-  app.setGlobalPrefix('stockbot-nestjs');
+  // 設定全域前綴 - 由 nginx 處理前綴
+  // app.setGlobalPrefix('stockbot-nestjs');
 
   // 配置 Swagger
   const config = new DocumentBuilder()
