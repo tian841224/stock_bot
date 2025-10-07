@@ -1,5 +1,5 @@
 services:
-  postgres:
+  stock-bot-db:
     image: postgres:latest
     restart: always
     environment:
@@ -36,7 +36,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      postgres:
+      stock-bot-db:
         condition: service_healthy
 
 volumes:
