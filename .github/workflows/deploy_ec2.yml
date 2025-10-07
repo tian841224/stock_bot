@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - master
+      - feature/修改CICD流程
   pull_request:
     branches:
       - master
