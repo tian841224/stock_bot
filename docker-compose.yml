@@ -18,7 +18,7 @@ services:
 
   api:
     image: ${DOCKER_HUB_USERNAME}/stock-bot:latest
-    container_name: stock-bot-api
+    container_name: stock-bot-nodejs-api
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL}
