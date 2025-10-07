@@ -23,14 +23,16 @@ async function bootstrap() {
   // app.use(multer().any());
   app.use(compression());  // 啟用壓縮
 
-  // 設定全域前綴
-  app.setGlobalPrefix('stockbot-nestjs');
+  // 設定全域前綴 - 由 nginx 處理前綴
+  // app.setGlobalPrefix('stockbot-nestjs');
 
   // 配置 Swagger
   const config = new DocumentBuilder()
     .setTitle('Stock API Documentation')
     .setDescription('使用Node.js Nest 框架撰寫的股票機器人 API 文件')
     .setVersion('1.0')
+    .addServer('https://stock-bot.tian1224.uk/stockbot-nestjs', '正式環境')
+    .addServer('http://localhost:3000', '開發環境')
     //  .addBearerAuth() // 如果有 JWT 驗證
     .build();
 

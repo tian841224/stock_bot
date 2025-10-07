@@ -1,7 +1,6 @@
 services:
-  postgres:
-    image: postgres:latest
-    container_name: stock-bot-db
+  stock-bot-db:
+    image: postgres:16-alpine
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -19,14 +18,14 @@ services:
 
   api:
     image: ${DOCKER_HUB_USERNAME}/stock-bot:latest
-    container_name: stock-bot-api
+    container_name: stock-bot-nodejs-api
     restart: unless-stopped
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@stock-bot-db:5432/${DB_NAME}
       DOCKER_HUB_USERNAME: ${DOCKER_HUB_USERNAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: stock_bot
+      DB_NAME: ${DB_NAME}
       CHANNEL_ACCESS_TOKEN: ${CHANNEL_ACCESS_TOKEN}
       CHANNEL_SECRET: ${CHANNEL_SECRET}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
@@ -37,7 +36,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      postgres:
+      stock-bot-db:
         condition: service_healthy
 
 volumes:
